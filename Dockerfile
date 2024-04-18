@@ -30,4 +30,4 @@ EXPOSE 3000
 
 # start the nginx web server
 
-CMD ["node", "-g", "/app/dist/app.js"]
+CMD ["node", "/app/dist/app.js"]
