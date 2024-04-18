@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ishan-ly/nft-marketplace-backend.git"
+    "url": "git+https://github.com/loyyal/nft-marketplace-backend.git"
   },
   "keywords": [
     "NFT",
@@ -22,9 +22,9 @@
   "author": "Ishan Agrawal",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/ishan-ly/nft-marketplace-backend/issues"
+    "url": "https://github.com/loyyal/nft-marketplace-backend/issues"
   },
-  "homepage": "https://github.com/ishan-ly/nft-marketplace-backend#readme",
+  "homepage": "https://github.com/loyyal/nft-marketplace-backend#readme",
   "dependencies": {
     "@types/node": "^20.12.7",
     "alchemy-sdk": "^3.2.1",
