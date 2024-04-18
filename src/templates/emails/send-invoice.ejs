@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+</head>
+
+<body>
+    <table bgcolor="#edf0f2"
+        style="box-sizing: border-box; border-spacing: 0; width: 100%; background-color: #ffff; border-collapse: separate !important;"
+        width="100%">
+        <tbody>
+            <tr>
+                <td style="box-sizing: border-box; padding: 0; font-family: 'Open Sans', 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif; font-size: 16px; vertical-align: top;"
+                    valign="top"> </td>
+                <td style="box-sizing: border-box; padding: 0; font-family: 'Open Sans', 'Helvetica Neue', 'Helvetica', Helvetica, Arial,sans-serif; font-size: 16px; vertical-align: top; display: block; width: 600px;
+                            max-width: 600px; margin: 0 auto !important;" valign="top" width="600">
+                    <div
+                        style="box-sizing: border-box; display: block; max-width: 600px; margin: 0 auto; padding: 10px;">
+                        <div style="box-sizing: border-box; width: 100%; margin-bottom: 30px; margin-top: 15px;">
+                            <table
+                                style="box-sizing: border-box; width: 100%; border-spacing: 0; border-collapse: separate !important;"
+                                width="100%">
+                                <tbody>
+                                    <tr>
+                                        <td align="left"
+                                            style="box-sizing: border-box; padding: 0; font-family: 'Open Sans', 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif; font-size: 16px; vertical-align: top; text-align: left;"
+                                            valign="top">
+                                            <sspan><a href="#" target="_blank">
+                                                    <img alt="Loyyal logo"
+                                                        src="https://ssl.gstatic.com/ui/v1/icons/mail/rfr/logo_gmail_lockup_default_1x_r5.png"
+                                                        style="max-width: 150px; border-style: none; " />
+                                                </a> </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div
+                            style="box-sizing: border-box; width: 100%; margin-bottom: 30px; background: #ffffff; border: 1px solid #f0f0f0; border-radius: 10px">
+                            <table
+                                style="box-sizing: border-box; width: 100%; border-spacing: 0; border-collapse: separate !important;"
+                                width="100%">
+                                <tbody>
+                                    <tr>
+                                        <td style="box-sizing: border-box; font-family: 'Open Sans', 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif; font-size: 16px; vertical-align: top; padding: 30px;"
+                                            valign="top">
+                                            <table
+                                                style="box-sizing: border-box; width: 100%; border-spacing: 0; border-collapse: separate !important;"
+                                                width="100%">
+                                                <tbody>
+                                                    <tr>
+                                                        <td style="box-sizing: border-box; padding: 0; font-family: 'Open Sans', 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif; font-size: 16px; vertical-align: top;"
+                                                            valign="top">
+                                                            <p style=" margin: 0; margin-bottom: 30px; color: #294661; font-family: 'Open Sans', 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 300;
+                                                                    ">Hi <%= values.name%>,<br />
+                                                                    <br />
+                                                                    We are writing to notify you that your Partnerhub
+                                                                    account has new invoice available. They can be
+                                                                    downloaded from the invoice section. Below are the
+                                                                    quick details
+                                                                    <br />
+                                                                    <br />
+                                                                    Invoice Number:
+                                                                    <%= values.invoiceNumber %> <br />
+                                                                    Total amount: <%= values.totalPrice %> <%= values.currency %> </p>
+
+                                                            <table
+                                                                style="box-sizing: border-box; width: 100%; border-spacing: 0px;"
+                                                                width="100%">
+                                                                <tbody>
+                                                                    <tr>
+                                                                        <td style="box-sizing: border-box; padding: 0px; vertical-align: top;"
+                                                                            valign="top"> </td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td style="box-sizing: border-box; padding: 0px; vertical-align: top;"
+                                                                            valign="top">
+                                                                            <table cellpadding="0" cellspacing="0"
+                                                                                style="box-sizing: border-box; border-spacing: 0px; width: 100%;"
+                                                                                width="100%">
+                                                                                <tbody>
+                                                                                    <tr>
+                                                                                        <td align="center"
+                                                                                            style="box-sizing: border-box; padding: 0px 0px 15px; vertical-align: top;"
+                                                                                            valign="top">
+                                                                                            <table cellpadding="0"
+                                                                                                cellspacing="0"
+                                                                                                style="box-sizing: border-box; border-spacing: 0px; width: auto;">
+                                                                                                <tbody>
+                                                                                                    <tr>
+                                                                                                        <td align="center"
+                                                                                                            bgcolor="#348eda"
+                                                                                                            style="box-sizing: border-box; padding: 0px; vertical-align: top; background-color: rgb(52, 142, 218); border-top-left-radius: 2px; border-top-right-radius: 2px; border-bottom-right-radius: 2px; border-bottom-left-radius: 2px; text-align: center;"
+                                                                                                            valign="top">
+                                                                                                            <a data-saferedirecturl="https://www.google.com/url?hl=en&amp;q=&lt;%= values.url %&gt;&amp;source=gmail&amp;ust=1636038743208000&amp;usg=AFQjCNFHz0anqp7m8KKUq7HPKLerDVRreA"
+                                                                                                                href="<%= values.url %>"
+                                                                                                                style="
+																												text-decoration: none; padding: 9px 28px; border-radius: 10px; color: white; outline: none; border: none; background-image: linear-gradient(to right, #212b36 10%, #212b36 100%); letter-spacing: 1.5px;
+																												font-weight: 100; transition: all linear 0.2s" target="_blank">
+                                                                                                                View Invoice</a>
+                                                                                                        </td>
+                                                                                                    </tr>
+                                                                                                    <tr>
+
+                                                                                                </tbody>
+                                                                                            </table>
+                                                                                        </td>
+                                                                                    </tr>
+                                                                                </tbody>
+                                                                            </table>
+                                                                            <p
+                                                                                style=" margin: 0; margin-bottom: 30px; color: #294661; font-family: 'Open Sans', 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif; font-size: 16px; font-weight: 300; ">
+                                                                                <br />
+                                                                                Thank you for using Loyyal Partnerhub
+                                                                                services. <br /> <br />
+                                                                                Loyyal Team
+                                                                            </p>
+                                                                        </td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div style="box-sizing: border-box; clear: both; width: 100%;">
+                            <table
+                                style="box-sizing: border-box; width: 100%; border-spacing: 0; font-size: 12px; border-collapse: separate !important;"
+                                width="100%">
+                                <tbody>
+                                    <tr style="font-size: 12px;">
+                                        <td align="center" style="
+                        box-sizing: border-box;font-family: 'Open Sans', 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif;vertical-align: top;font-size: 12px; text-align:center;
+                                        " valign="top">
+                                            <p
+                                                style="color: #294661; font-family: 'Open Sans', 'Helvetica Neue', 'Helvetica', Helvetica, Arial, sans-serif; font-size: 12px; font-weight: 400;">
+                                                © Loyyal Holdings 2023</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</body>
+
+</html>
