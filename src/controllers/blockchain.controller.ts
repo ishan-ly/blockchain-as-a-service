@@ -11,4 +11,16 @@ export default function blockchainServiceController(app: express.Application) {
         const response: any = await new BlockchainService().getNFTsByAddress();
         return res.status(response.status).send(response);
     });
+
+    app.post('/v1/token/transfer', async function (req: express.Request, res: express.Response) {
+        const response: any = await new BlockchainService().transfer(req);
+        return res.status(response.status).send(response);
+    });
+
+    app.get('/v1/token/transactions', async function (req: express.Request, res: express.Response) {
+        const response: any = await new BlockchainService().getAllTransferTransactions();
+        return res.status(response.status).send(response);
+    });
+
+
 }
