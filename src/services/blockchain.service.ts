@@ -4,12 +4,12 @@ import { LoyyalTokenTransfer } from "../models/loyyal-token-transfer.model";
 import { CommonUtils } from "../utils/common.utils";
 import { MongoUtils } from "../utils/mongo.utils";
 import { Network, Alchemy } from "alchemy-sdk";
-import { ethers } from "ethers";
-import { ERC20_POLYGON_TESTNET_CONTRACT_ADDRESS,  ERC20_POLYGON_TESTNET_ABI} from "../../config/config";
+import { ethers } from "hardhat";
+
+import {ERC20_POLYGON_TESTNET_ABI, ERC20_FACTORY_CONTRACT_ADDRESS, ERC20_FACTORY_ABI} from "../../config/config";
 import { NotificationService } from "./notification.service";
 
 export class BlockchainService {
-    JSON_RPC_PROVIDER : any = process.env.JSON_RPC_PROVIDER
 
     async getNFTsByAddress(): Promise<any> {
        
@@ -58,29 +58,52 @@ export class BlockchainService {
         }
     }
 
-    private async initializeContract(wallet) {
+    private async initializeContract(contractAddress, ABI) {
         try {
-            return new ethers.Contract(ERC20_POLYGON_TESTNET_CONTRACT_ADDRESS, ERC20_POLYGON_TESTNET_ABI, wallet);
+            const provider = new ethers.JsonRpcProvider(process.env.JSON_RPC_PROVIDER);
+            const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+            return new ethers.Contract(contractAddress, ABI, wallet);
         } catch (error) {
             return CommonUtils.prepareErrorMessage(error);
         }       
     }
+
+    public async deployContract(req : any) : Promise<CustomResponse> {
+        try {
+            const { name, symbol, initialSupply, decimals } = req.body;
+            const factoryContract : any = await this.initializeContract(ERC20_FACTORY_CONTRACT_ADDRESS, ERC20_FACTORY_ABI);
+            const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, new ethers.JsonRpcProvider(process.env.JSON_RPC_PROVIDER));
+
+            const tx = await factoryContract.createTokenERC20(name, symbol, initialSupply, decimals);
+            await tx.wait();
+        
+            const filter = factoryContract.filters.ContractDeployed();
+            const events = await factoryContract.queryFilter(filter, "latest");
+            const event : any = events[events.length - 1];
+            const tokenAddress = event.args?.tokenAddress;
+            return new CustomResponse(200, "Contract deployed successfully ", null, {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`https://www.oklink.com/amoy/token/${tokenAddress}`});
+    
+        } catch (error) {
+            return CommonUtils.prepareErrorMessage(error);
+        }
+      }
 
     public async transfer(req : any) : Promise<CustomResponse> {
 
         try {
             if(!req.body.to) throw new InvalidInputError("to address is required");
             if(!req.body.amount) throw new InvalidInputError("amount is required");
+            if(!req.body.contractAddress) throw new InvalidInputError("contractAddress is required");
 
             const connection = new MongoUtils();
             connection.connect();
     
             const to = req.body.to;
             const amount = ethers.parseUnits(req.body.amount, 18);
-
-            const provider = new ethers.JsonRpcProvider(process.env.JSON_RPC_PROVIDER);
-            const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
-            const contract : any = await this.initializeContract(wallet);
+            const contractAddress = req.body.contractAddress;
+            const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, new ethers.JsonRpcProvider(process.env.JSON_RPC_PROVIDER));
+            
+            const contract : any = await this.initializeContract(contractAddress, ERC20_POLYGON_TESTNET_ABI);
             const tx = await contract.transfer(to, amount);
             await tx.wait();
             console.log('Transaction hash:', tx.hash);

@@ -4,3 +4,5 @@ package-lock.json
 
 .env
 .vscode
+artifacts
+typechain-types

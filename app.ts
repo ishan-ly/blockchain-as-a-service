@@ -1,7 +1,7 @@
 import express, { Express, Request, Response } from 'express';
 import bodyParser from 'body-parser';
 const dotenv = require('dotenv');
-import cors = require('cors');
+import cors from 'cors';
 import * as http from 'http';
 
 import controllers from './src/controllers';

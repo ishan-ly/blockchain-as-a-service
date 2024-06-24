@@ -26,12 +26,14 @@
   },
   "homepage": "https://github.com/loyyal/nft-marketplace-backend#readme",
   "dependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@openzeppelin/contracts": "^5.0.2",
     "alchemy-sdk": "^3.2.1",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "ejs": "^3.1.10",
-    "ethers": "^6.13.0",
+    "ethers": "^6.13.1",
     "express": "^4.19.2",
     "fs": "^0.0.1-security",
     "http": "^0.0.1-security",
@@ -39,7 +41,6 @@
     "mongodb": "^6.5.0",
     "node-cron": "^3.0.3",
     "nodemailer": "^6.9.13",
-    "typescript": "^5.1.6",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
@@ -48,6 +49,9 @@
     "@types/node": "^20.14.5",
     "@types/uuid": "^9.0.2",
     "concurrently": "^8.2.0",
-    "nodemon": "^3.1.0"
+    "hardhat": "^2.22.5",
+    "nodemon": "^3.1.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.2"
   }
 }
