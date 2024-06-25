@@ -11,12 +11,12 @@ contract ERC20Factory {
         emit ContractDeployed(address(newToken));
     }
 
-    function createTokenERC721(string memory name, string memory symbol, uint256 initialSupply) external {
+    function createTokenERC20Ownable(string memory name, string memory symbol, uint256 initialSupply, uint8 decimals) external {
         // ERC20Token newToken = new ERC20Token(name, symbol, initialSupply);
         // emit ContractDeployed(address(newToken));
     }
 
-    function createTokenERC1155(string memory name, string memory symbol, uint256 initialSupply) external {
+    function createTokenERC20Upgradable(string memory name, string memory symbol, uint256 initialSupply, uint8 decimals) external {
         // ERC20Token newToken = new ERC20Token(name, symbol, initialSupply);
         // emit ContractDeployed(address(newToken));
     }

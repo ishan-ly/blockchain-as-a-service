@@ -6,7 +6,7 @@ import { MongoUtils } from "../utils/mongo.utils";
 import { Network, Alchemy } from "alchemy-sdk";
 import { ethers } from "hardhat";
 
-import {ERC20_POLYGON_TESTNET_ABI, ERC20_FACTORY_CONTRACT_ADDRESS, ERC20_FACTORY_ABI} from "../../config/config";
+import {ERC20_POLYGON_TESTNET_ABI, ERC721_POLYGON_TESTNET_ABI, ERC20_FACTORY_CONTRACT_ADDRESS, ERC20_FACTORY_ABI, ERC721_FACTORY_CONTRACT_ADDRESS, ERC721_FACTORY_ABI} from "../../config/config";
 import { NotificationService } from "./notification.service";
 
 export class BlockchainService {
@@ -68,25 +68,104 @@ export class BlockchainService {
         }       
     }
 
-    public async deployContract(req : any) : Promise<CustomResponse> {
+    public async deployERC20Contract(req : any) : Promise<CustomResponse> {
+        const connection = new MongoUtils();
+        connection.connect();
+
         try {
+            if(!req.body.name) throw new InvalidInputError("name is required");
+            if(!req.body.symbol) throw new InvalidInputError("symbol is required");
+            if(!req.body.initialSupply) throw new InvalidInputError("initialSuppply is required");
+            if(!req.body.decimals) throw new InvalidInputError("decimals is required");
+            if(!req.body.tokenStandard) throw new InvalidInputError("tokenStandard is required");
+            if(!req.body.mintable) throw new InvalidInputError("mintable is required");            
+            
             const { name, symbol, initialSupply, decimals } = req.body;
             const factoryContract : any = await this.initializeContract(ERC20_FACTORY_CONTRACT_ADDRESS, ERC20_FACTORY_ABI);
             const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, new ethers.JsonRpcProvider(process.env.JSON_RPC_PROVIDER));
 
             const tx = await factoryContract.createTokenERC20(name, symbol, initialSupply, decimals);
-            await tx.wait();
-        
-            const filter = factoryContract.filters.ContractDeployed();
-            const events = await factoryContract.queryFilter(filter, "latest");
-            const event : any = events[events.length - 1];
-            const tokenAddress = event.args?.tokenAddress;
+            const receipt = await tx.wait();
+
+            // Assume ContractDeployed is the event emitted and it has a tokenAddress field
+            const eventSignature = ethers.id("ContractDeployed(address)");
+
+            // Find the log that matches the ContractDeployed event
+            const eventLog = receipt.logs.find(log => log.topics[0] === eventSignature);
+            let tokenAddress;
+            if (eventLog) {
+                // Decode the log data
+                const decodedLog = factoryContract.interface.decodeEventLog("ContractDeployed", eventLog.data, eventLog.topics);
+                tokenAddress = decodedLog.tokenAddress;
+                console.log("Token address:", tokenAddress);
+            } else {
+                console.error("ContractDeployed event not found in the transaction receipt");
+            }
+            //store in db
+            await connection.insert("erc20_deployed_contracts", {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`https://www.oklink.com/amoy/token/${tokenAddress}`});
             return new CustomResponse(200, "Contract deployed successfully ", null, {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`https://www.oklink.com/amoy/token/${tokenAddress}`});
     
         } catch (error) {
             return CommonUtils.prepareErrorMessage(error);
         }
       }
+    
+    public async deployERC721Contract(req : any) {
+        const connection = new MongoUtils();
+        connection.connect();
+        try {
+            const { name, symbol } = req.body;
+            const factoryContract : any = await this.initializeContract(ERC721_FACTORY_CONTRACT_ADDRESS, ERC721_FACTORY_ABI);
+            const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, new ethers.JsonRpcProvider(process.env.JSON_RPC_PROVIDER));
+
+            const tx = await factoryContract.createERC721(name, symbol);
+            const receipt = await tx.wait();
+
+            // Assume ContractDeployed is the event emitted and it has a tokenAddress field
+            const eventSignature = ethers.id("ERC721Created(address)");
+
+            // Find the log that matches the ERC721Created event
+            const eventLog = receipt.logs.find(log => log.topics[0] === eventSignature);
+            let tokenAddress;
+            if (eventLog) {
+                // Decode the log data
+                const decodedLog = factoryContract.interface.decodeEventLog("ERC721Created", eventLog.data, eventLog.topics);
+                tokenAddress = decodedLog.tokenAddress;
+                console.log("Token address:", tokenAddress);
+            } else {
+                console.error("ContractDeployed event not found in the transaction receipt");
+            }
+            await connection.insert("erc721_deployed_contracts", {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`https://www.oklink.com/amoy/address/${tokenAddress}`});
+
+            return new CustomResponse(200, "Contract ERC721 deployed successfully ", null, {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`https://www.oklink.com/amoy/address/${tokenAddress}`});
+
+        } catch (error) {
+            return CommonUtils.prepareErrorMessage(error);
+        }
+    }
+
+    public async mintERC721Nft(req : any) : Promise<CustomResponse>{
+        const connection = new MongoUtils();
+        connection.connect();
+        try {
+            const to = req.body.to;
+            const tokenId = req.body.tokenId;
+            const uri = req.body.uri;
+            const contractAddress = req.body.contractAddress;
+            const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, new ethers.JsonRpcProvider(process.env.JSON_RPC_PROVIDER));
+            
+            const contract : any = await this.initializeContract(contractAddress, ERC721_POLYGON_TESTNET_ABI);
+            const tx = await contract.safeMint(to, tokenId, uri);
+            await tx.wait();
+            console.log('Transaction hash:', tx.hash);
+            await connection.insert("erc721_transactions", {method : 'safeMint', from  : wallet.address, to, tokenId, uri, contractAddress, hash : tx.hash});
+            return new CustomResponse(200, "Minting successfull", null, {hash : tx.hash});
+
+        } catch (error) {
+            return CommonUtils.prepareErrorMessage(error);
+
+        }
+    }
 
     public async transfer(req : any) : Promise<CustomResponse> {
 
@@ -116,7 +195,7 @@ export class BlockchainService {
             tokenTransfer.$amount = amount.toString();
             tokenTransfer.$network = process.env.NETWORK;
 
-            await connection.insert("loyyal_token_transfers", tokenTransfer);
+            await connection.insert("erc20_transactions", tokenTransfer);
             return new CustomResponse(200, "Transfer successfull", null, {hash : tx.hash});
     
         } catch (error) {

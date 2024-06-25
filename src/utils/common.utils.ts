@@ -20,7 +20,7 @@ export class CommonUtils {
             case 'CustomError':
                 return new CustomResponse(422, error.message, null, null);
             default:
-                return new CustomResponse(500, 'Ohh, something went wrong.', null, null);
+                return new CustomResponse(500, error.message || 'Ohh, something went wrong.', null, null);
         }
     }
 
