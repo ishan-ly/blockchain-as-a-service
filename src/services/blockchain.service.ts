@@ -6,7 +6,8 @@ import { MongoUtils } from "../utils/mongo.utils";
 import { Network, Alchemy } from "alchemy-sdk";
 import { ethers } from "hardhat";
 
-import {ERC20_POLYGON_TESTNET_ABI, ERC721_POLYGON_TESTNET_ABI, ERC20_FACTORY_CONTRACT_ADDRESS, ERC20_FACTORY_ABI, ERC721_FACTORY_CONTRACT_ADDRESS, ERC721_FACTORY_ABI} from "../../config/config";
+import {ERC20_POLYGON_TESTNET_ABI, ERC721_POLYGON_TESTNET_ABI, ERC721_FACTORY_POLYGON_AMOY_CONTRACT_ADDRESS, ERC721_FACTORY_ABI} from "../../config/config";
+import { config } from "../../config/config-chain"
 import { NotificationService } from "./notification.service";
 
 export class BlockchainService {
@@ -58,9 +59,9 @@ export class BlockchainService {
         }
     }
 
-    private async initializeContract(contractAddress, ABI) {
+    private async initializeContract(JSON_RPC_PROVIDER, contractAddress, ABI) {
         try {
-            const provider = new ethers.JsonRpcProvider(process.env.JSON_RPC_PROVIDER);
+            const provider = new ethers.JsonRpcProvider(JSON_RPC_PROVIDER);
             const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
             return new ethers.Contract(contractAddress, ABI, wallet);
         } catch (error) {
@@ -78,33 +79,65 @@ export class BlockchainService {
             if(!req.body.initialSupply) throw new InvalidInputError("initialSuppply is required");
             if(!req.body.decimals) throw new InvalidInputError("decimals is required");
             if(!req.body.tokenStandard) throw new InvalidInputError("tokenStandard is required");
-            if(!req.body.mintable) throw new InvalidInputError("mintable is required");            
-            
-            const { name, symbol, initialSupply, decimals } = req.body;
-            const factoryContract : any = await this.initializeContract(ERC20_FACTORY_CONTRACT_ADDRESS, ERC20_FACTORY_ABI);
-            const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, new ethers.JsonRpcProvider(process.env.JSON_RPC_PROVIDER));
+            if(!req.body.mintable) throw new InvalidInputError("mintable is required");
+            if(!req.body.network) throw new InvalidInputError("network is required");   
+            const { name, symbol, initialSupply, decimals, network } = req.body;
+            const configuration = config[network];
 
-            const tx = await factoryContract.createTokenERC20(name, symbol, initialSupply, decimals);
-            const receipt = await tx.wait();
+            switch(network) {
+                case 'polygon-amoy' : {
+                    const factoryContract : any = await this.initializeContract(configuration.JSON_RPC_PROVIDER, configuration.ERC20_FACTORY_CONTRACT_ADDRESS, configuration.ERC20_FACTORY_ABI);
+                    const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, new ethers.JsonRpcProvider(configuration.JSON_RPC_PROVIDER));
 
-            // Assume ContractDeployed is the event emitted and it has a tokenAddress field
-            const eventSignature = ethers.id("ContractDeployed(address)");
+                    const tx = await factoryContract.createTokenERC20(name, symbol, initialSupply, decimals);
+                    const receipt = await tx.wait();
 
-            // Find the log that matches the ContractDeployed event
-            const eventLog = receipt.logs.find(log => log.topics[0] === eventSignature);
-            let tokenAddress;
-            if (eventLog) {
-                // Decode the log data
-                const decodedLog = factoryContract.interface.decodeEventLog("ContractDeployed", eventLog.data, eventLog.topics);
-                tokenAddress = decodedLog.tokenAddress;
-                console.log("Token address:", tokenAddress);
-            } else {
-                console.error("ContractDeployed event not found in the transaction receipt");
+                    // Assume ContractDeployed is the event emitted and it has a tokenAddress field
+                    const eventSignature = ethers.id("ContractDeployed(address)");
+
+                    // Find the log that matches the ContractDeployed event
+                    const eventLog = receipt.logs.find(log => log.topics[0] === eventSignature);
+                    let tokenAddress;
+                    if (eventLog) {
+                        // Decode the log data
+                        const decodedLog = factoryContract.interface.decodeEventLog("ContractDeployed", eventLog.data, eventLog.topics);
+                        tokenAddress = decodedLog.tokenAddress;
+                        console.log("Token address:", tokenAddress);
+                    } else {
+                        console.error("ContractDeployed event not found in the transaction receipt");
+                    }
+                    //store in db
+                    await connection.insert("erc20_deployed_contracts", {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`${configuration.EXPLORER_BASE_URL}/token/${tokenAddress}`, network});
+                    return new CustomResponse(200, "Contract deployed successfully ", null, {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`${configuration.EXPLORER_BASE_URL}/token/${tokenAddress}`, network});
+                    //break;
+                }
+                case 'ethereum-sepolia' : {
+                    const factoryContract : any = await this.initializeContract(configuration.JSON_RPC_PROVIDER, configuration.ERC20_FACTORY_CONTRACT_ADDRESS, configuration.ERC20_FACTORY_ABI);
+                    const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, new ethers.JsonRpcProvider(configuration.JSON_RPC_PROVIDER));
+
+                    const tx = await factoryContract.createTokenERC20(name, symbol, initialSupply, decimals);
+                    const receipt = await tx.wait();
+
+                    // Assume ContractDeployed is the event emitted and it has a tokenAddress field
+                    const eventSignature = ethers.id("ContractDeployed(address)");
+
+                    // Find the log that matches the ContractDeployed event
+                    const eventLog = receipt.logs.find(log => log.topics[0] === eventSignature);
+                    let tokenAddress;
+                    if (eventLog) {
+                        // Decode the log data
+                        const decodedLog = factoryContract.interface.decodeEventLog("ContractDeployed", eventLog.data, eventLog.topics);
+                        tokenAddress = decodedLog.tokenAddress;
+                        console.log("Token address:", tokenAddress);
+                    } else {
+                        console.error("ContractDeployed event not found in the transaction receipt");
+                    }
+                    //store in db
+                    await connection.insert("erc20_deployed_contracts", {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`${configuration.EXPLORER_BASE_URL}/token/${tokenAddress}`, network});
+                    return new CustomResponse(200, "Contract deployed successfully ", null, {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`${configuration.EXPLORER_BASE_URL}/token/${tokenAddress}`, network});
+                    //break; 
+                }
             }
-            //store in db
-            await connection.insert("erc20_deployed_contracts", {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`https://www.oklink.com/amoy/token/${tokenAddress}`});
-            return new CustomResponse(200, "Contract deployed successfully ", null, {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`https://www.oklink.com/amoy/token/${tokenAddress}`});
-    
         } catch (error) {
             return CommonUtils.prepareErrorMessage(error);
         }
@@ -115,8 +148,8 @@ export class BlockchainService {
         connection.connect();
         try {
             const { name, symbol } = req.body;
-            const factoryContract : any = await this.initializeContract(ERC721_FACTORY_CONTRACT_ADDRESS, ERC721_FACTORY_ABI);
-            const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, new ethers.JsonRpcProvider(process.env.JSON_RPC_PROVIDER));
+            const factoryContract : any = await this.initializeContract(process.env.JSON_RPC_PROVIDER_AMOY,ERC721_FACTORY_POLYGON_AMOY_CONTRACT_ADDRESS, ERC721_FACTORY_ABI);
+            const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, new ethers.JsonRpcProvider(process.env.JSON_RPC_PROVIDER_AMOY));
 
             const tx = await factoryContract.createERC721(name, symbol);
             const receipt = await tx.wait();
@@ -152,9 +185,9 @@ export class BlockchainService {
             const tokenId = req.body.tokenId;
             const uri = req.body.uri;
             const contractAddress = req.body.contractAddress;
-            const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, new ethers.JsonRpcProvider(process.env.JSON_RPC_PROVIDER));
+            const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, new ethers.JsonRpcProvider(process.env.JSON_RPC_PROVIDER_AMOY));
             
-            const contract : any = await this.initializeContract(contractAddress, ERC721_POLYGON_TESTNET_ABI);
+            const contract : any = await this.initializeContract(process.env.JSON_RPC_PROVIDER_AMOY, contractAddress, ERC721_POLYGON_TESTNET_ABI);
             const tx = await contract.safeMint(to, tokenId, uri);
             await tx.wait();
             console.log('Transaction hash:', tx.hash);
@@ -180,9 +213,9 @@ export class BlockchainService {
             const to = req.body.to;
             const amount = ethers.parseUnits(req.body.amount, 18);
             const contractAddress = req.body.contractAddress;
-            const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, new ethers.JsonRpcProvider(process.env.JSON_RPC_PROVIDER));
+            const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, new ethers.JsonRpcProvider(process.env.JSON_RPC_PROVIDER_AMOY));
             
-            const contract : any = await this.initializeContract(contractAddress, ERC20_POLYGON_TESTNET_ABI);
+            const contract : any = await this.initializeContract(process.env.JSON_RPC_PROVIDER_AMOY, contractAddress, ERC20_POLYGON_TESTNET_ABI);
             const tx = await contract.transfer(to, amount);
             await tx.wait();
             console.log('Transaction hash:', tx.hash);
