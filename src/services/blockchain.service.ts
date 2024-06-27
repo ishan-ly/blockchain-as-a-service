@@ -83,76 +83,42 @@ export class BlockchainService {
             if(!req.body.tokenStandard) throw new InvalidInputError("tokenStandard is required");
             if(!req.body.mintable) throw new InvalidInputError("mintable is required");
             if(!req.body.network) throw new InvalidInputError("network is required");   
-            const { name, symbol, initialSupply, decimals, network } = req.body;
+            const { name, symbol, initialSupply, decimals, network, tokenStandard } = req.body;
             const configuration = config[network];
 
-            switch(network) {
-                case 'polygonAmoy' : {
-                    const factoryContract : any = await this.initializeContract(configuration.JSON_RPC_PROVIDER, configuration.ERC20_FACTORY_CONTRACT_ADDRESS, configuration.ERC20_FACTORY_ABI);
-                    const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, new ethers.JsonRpcProvider(configuration.JSON_RPC_PROVIDER));
+            console.log(`-------------Deployment of ${tokenStandard} contract started on ${network}--------------- `);
+            const factoryContract : any = await this.initializeContract(configuration.JSON_RPC_PROVIDER, configuration.ERC20_FACTORY_CONTRACT_ADDRESS, configuration.ERC20_FACTORY_ABI);
+            const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, new ethers.JsonRpcProvider(configuration.JSON_RPC_PROVIDER));
 
-                    const tx = await factoryContract.createTokenERC20(name, symbol, initialSupply, decimals);
-                    const receipt = await tx.wait();
+            const tx = await factoryContract.createTokenERC20(name, symbol, initialSupply, decimals);
+            const receipt = await tx.wait();
 
-                    // Assume ContractDeployed is the event emitted and it has a tokenAddress field
-                    const eventSignature = ethers.id("ContractDeployed(address)");
+            // Assume ContractDeployed is the event emitted and it has a tokenAddress field
+            const eventSignature = ethers.id("ContractDeployed(address)");
 
-                    // Find the log that matches the ContractDeployed event
-                    const eventLog = receipt.logs.find(log => log.topics[0] === eventSignature);
-                    let tokenAddress;
-                    if (eventLog) {
-                        // Decode the log data
-                        const decodedLog = factoryContract.interface.decodeEventLog("ContractDeployed", eventLog.data, eventLog.topics);
-                        tokenAddress = decodedLog.tokenAddress;
-                        console.log("Token address:", tokenAddress);
-                        try {
-                            await this.verifyContract(tokenAddress, name, symbol, initialSupply, decimals, wallet.address, network);
+            // Find the log that matches the ContractDeployed event
+            const eventLog = receipt.logs.find(log => log.topics[0] === eventSignature);
+            let tokenAddress;
+            if (eventLog) {
+                // Decode the log data
+                const decodedLog = factoryContract.interface.decodeEventLog("ContractDeployed", eventLog.data, eventLog.topics);
+                tokenAddress = decodedLog.tokenAddress;
+                console.log("Token contract address:", tokenAddress);
+                console.log("Transaction hash: ", tx.hash);
 
-                        } catch (error) {
-                            console.error("Verification failed:", error);
-                        }
-                    } else {
-                        console.error("ContractDeployed event not found in the transaction receipt");
-                    }
-                    //store in db
-                    await connection.insert("erc20_deployed_contracts", {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`${configuration.EXPLORER_BASE_URL}/token/${tokenAddress}`, network});
-                    return new CustomResponse(200, "Contract deployed successfully ", null, {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`${configuration.EXPLORER_BASE_URL}/token/${tokenAddress}`, network});
-                    //break;
+                try {
+                    await this.verifyContract(tokenAddress, name, symbol, initialSupply, decimals, wallet.address, network);
+
+                } catch (error) {
+                    console.error("Verification failed:", error);
                 }
-                case 'sepolia' : {
-                    const factoryContract : any = await this.initializeContract(configuration.JSON_RPC_PROVIDER, configuration.ERC20_FACTORY_CONTRACT_ADDRESS, configuration.ERC20_FACTORY_ABI);
-                    const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, new ethers.JsonRpcProvider(configuration.JSON_RPC_PROVIDER));
-
-                    const tx = await factoryContract.createTokenERC20(name, symbol, initialSupply, decimals);
-                    const receipt = await tx.wait();
-
-                    // Assume ContractDeployed is the event emitted and it has a tokenAddress field
-                    const eventSignature = ethers.id("ContractDeployed(address)");
-
-                    // Find the log that matches the ContractDeployed event
-                    const eventLog = receipt.logs.find(log => log.topics[0] === eventSignature);
-                    let tokenAddress;
-                    if (eventLog) {
-                        // Decode the log data
-                        const decodedLog = factoryContract.interface.decodeEventLog("ContractDeployed", eventLog.data, eventLog.topics);
-                        tokenAddress = decodedLog.tokenAddress;
-                        console.log("Token address:", tokenAddress);
-
-                        try {
-                            await this.verifyContract(tokenAddress, name, symbol, initialSupply, decimals, wallet.address, network);
-
-                        } catch (error) {
-                            console.error("Verification failed:", error);
-                        }
-                    } else {
-                        console.error("ContractDeployed event not found in the transaction receipt");
-                    }
-                    //store in db
-                    await connection.insert("erc20_deployed_contracts", {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`${configuration.EXPLORER_BASE_URL}/token/${tokenAddress}`, network});
-                    return new CustomResponse(200, "Contract deployed successfully ", null, {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`${configuration.EXPLORER_BASE_URL}/token/${tokenAddress}`, network});
-                    //break; 
-                }
+            } else {
+                console.error("ContractDeployed event not found in the transaction receipt");
             }
+            //store in db
+            await connection.insert("erc20_deployed_contracts", {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`${configuration.EXPLORER_BASE_URL}/token/${tokenAddress}`, network});
+            return new CustomResponse(200, "Contract deployed successfully ", null, {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`${configuration.EXPLORER_BASE_URL}/token/${tokenAddress}`, network});
+
         } catch (error) {
             return CommonUtils.prepareErrorMessage(error);
         }
@@ -160,15 +126,10 @@ export class BlockchainService {
 
     public async verifyContract(tokenAddress, name, symbol, initialSupply, decimals, initialOwner, network) {
         try {
-            // Wait for a short period to ensure the transaction is confirmed before verification
-            // await new Promise((resolve) => setTimeout(resolve, 60000)); // 60 seconds
-
-            await run("verify:verify", {
-                address: tokenAddress,
-                // network: "sepolia",
-                constructorArguments: [name, symbol, initialSupply, decimals, initialOwner],
-            }, {network : network});
+            console.log(`-------------Contract verification started on ${network}---------------`);
+            await run("verify:verify", { address: tokenAddress, constructorArguments: [name, symbol, initialSupply, decimals, initialOwner]}, {network});
             console.log("Contract verified successfully");
+            return;
         } catch (error) {
             console.error("Verification failed:", error);
             throw new Error("Contract verification failed");
