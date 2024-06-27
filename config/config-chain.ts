@@ -1,5 +1,5 @@
 export const config = {
-    "polygon-amoy" : {
+    "polygonAmoy" : {
         "ERC20_ABI": [
             {
               "inputs": [
@@ -524,9 +524,9 @@ export const config = {
             }
           ],
         "JSON_RPC_PROVIDER":"https://polygon-amoy.g.alchemy.com/v2/1i-JadBalM7Dp1PnYL76aG1vREB_yfGp",
-        "EXPLORER_BASE_URL":"https://oklink.com/amoy"
+        "EXPLORER_BASE_URL":"https://amoy.polygonscan.com"
     },
-    "ethereum-sepolia" : {
+    "sepolia" : {
         "ERC20_ABI": [
             {
               "inputs": [

@@ -4,12 +4,14 @@ import { LoyyalTokenTransfer } from "../models/loyyal-token-transfer.model";
 import { CommonUtils } from "../utils/common.utils";
 import { MongoUtils } from "../utils/mongo.utils";
 import { Network, Alchemy } from "alchemy-sdk";
-import { ethers } from "hardhat";
+import { ethers, run } from "hardhat";
+import axios from "axios";
 
 import {ERC20_POLYGON_TESTNET_ABI, ERC721_POLYGON_TESTNET_ABI, ERC721_FACTORY_POLYGON_AMOY_CONTRACT_ADDRESS, ERC721_FACTORY_ABI} from "../../config/config";
 import { config } from "../../config/config-chain"
 import { NotificationService } from "./notification.service";
-
+import path from "path";
+import fs from "fs"
 export class BlockchainService {
 
     async getNFTsByAddress(): Promise<any> {
@@ -85,7 +87,7 @@ export class BlockchainService {
             const configuration = config[network];
 
             switch(network) {
-                case 'polygon-amoy' : {
+                case 'polygonAmoy' : {
                     const factoryContract : any = await this.initializeContract(configuration.JSON_RPC_PROVIDER, configuration.ERC20_FACTORY_CONTRACT_ADDRESS, configuration.ERC20_FACTORY_ABI);
                     const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, new ethers.JsonRpcProvider(configuration.JSON_RPC_PROVIDER));
 
@@ -103,6 +105,12 @@ export class BlockchainService {
                         const decodedLog = factoryContract.interface.decodeEventLog("ContractDeployed", eventLog.data, eventLog.topics);
                         tokenAddress = decodedLog.tokenAddress;
                         console.log("Token address:", tokenAddress);
+                        try {
+                            await this.verifyContract(tokenAddress, name, symbol, initialSupply, decimals, wallet.address, network);
+
+                        } catch (error) {
+                            console.error("Verification failed:", error);
+                        }
                     } else {
                         console.error("ContractDeployed event not found in the transaction receipt");
                     }
@@ -111,7 +119,7 @@ export class BlockchainService {
                     return new CustomResponse(200, "Contract deployed successfully ", null, {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`${configuration.EXPLORER_BASE_URL}/token/${tokenAddress}`, network});
                     //break;
                 }
-                case 'ethereum-sepolia' : {
+                case 'sepolia' : {
                     const factoryContract : any = await this.initializeContract(configuration.JSON_RPC_PROVIDER, configuration.ERC20_FACTORY_CONTRACT_ADDRESS, configuration.ERC20_FACTORY_ABI);
                     const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, new ethers.JsonRpcProvider(configuration.JSON_RPC_PROVIDER));
 
@@ -129,6 +137,13 @@ export class BlockchainService {
                         const decodedLog = factoryContract.interface.decodeEventLog("ContractDeployed", eventLog.data, eventLog.topics);
                         tokenAddress = decodedLog.tokenAddress;
                         console.log("Token address:", tokenAddress);
+
+                        try {
+                            await this.verifyContract(tokenAddress, name, symbol, initialSupply, decimals, wallet.address, network);
+
+                        } catch (error) {
+                            console.error("Verification failed:", error);
+                        }
                     } else {
                         console.error("ContractDeployed event not found in the transaction receipt");
                     }
@@ -141,7 +156,69 @@ export class BlockchainService {
         } catch (error) {
             return CommonUtils.prepareErrorMessage(error);
         }
-      }
+    }
+
+    public async verifyContract(tokenAddress, name, symbol, initialSupply, decimals, initialOwner, network) {
+        try {
+            // Wait for a short period to ensure the transaction is confirmed before verification
+            // await new Promise((resolve) => setTimeout(resolve, 60000)); // 60 seconds
+
+            await run("verify:verify", {
+                address: tokenAddress,
+                // network: "sepolia",
+                constructorArguments: [name, symbol, initialSupply, decimals, initialOwner],
+            }, {network : network});
+            console.log("Contract verified successfully");
+        } catch (error) {
+            console.error("Verification failed:", error);
+            throw new Error("Contract verification failed");
+        }
+    }
+
+    public async verifyContract1(req : any) {
+        try {
+            const name = "Loyyall Token";
+            const symbol = "LOYL";
+            const initialSupply = 1000000;
+            const decimals = 18;
+            const initialOwner = "0xe8F910b8eD19BC258b20A0c86e292394EfE38318"
+
+            const flattenedCodePath = path.resolve(__dirname, '..', 'flattened', 'ERC20Token_flat.sol');
+            const flattenedCode = fs.readFileSync(flattenedCodePath, 'utf8');
+
+            const contractSource = ""
+            const encodedArgs =  new ethers.AbiCoder().encode(
+                ["string", "string", "uint256", "uint8", "address"],
+                [name, symbol, initialSupply, decimals, initialOwner])
+
+            const constructorArguments = encodedArgs.slice(2); // Remove '0x' prefix
+            console.log(constructorArguments)
+
+
+            const response = await axios.post('https://api-sepolia.etherscan.io/api', null, {
+            params: {
+                module: 'contract',
+                action: 'verifysourcecode',
+                apikey: process.env.ETHERSCAN_API_KEY,
+                contractaddress: "0xc4466C80587092d4c1C3033ea4b2fCdbD661fdA6",
+                sourceCode: flattenedCode,
+                contractname: "ERC20Token",
+                compilerversion: "v0.8.20+commit.a1b79de6",
+                constructorArguements: constructorArguments,
+                optimizationUsed: 1,
+                runs: 200,
+                licenseType : 1
+            },
+            });
+            console.log(response)
+
+            if (response.data.status === '1') {
+                return new CustomResponse(200, "Contract verification submitted successfully", null, response.data.result);
+            } 
+        } catch (error) {
+            return CommonUtils.prepareErrorMessage(error);
+        }
+    }
     
     public async deployERC721Contract(req : any) {
         const connection = new MongoUtils();

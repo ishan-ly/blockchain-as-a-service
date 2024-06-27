@@ -37,6 +37,11 @@ export default function blockchainServiceController(app: express.Application) {
         return res.status(response.status).send(response);
     });
 
+    app.get('/v1/token/verify', async function (req: express.Request, res: express.Response) {
+        const response: any = await new BlockchainService().verifyContract1(req);
+        return res.status(response.status).send(response);
+    });
+
 
 
 }
