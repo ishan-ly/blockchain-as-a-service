@@ -1,5 +1,6 @@
 import * as express from 'express';
 import { BlockchainService } from '../services/blockchain.service';
+import { TokenService } from '../services/token.service';
 
 export default function blockchainServiceController(app: express.Application) {
     app.post('/v1/nft/save-airdorp-details', async function (req: express.Request, res: express.Response) {
@@ -14,6 +15,11 @@ export default function blockchainServiceController(app: express.Application) {
 
     app.post('/v1/token/transfer', async function (req: express.Request, res: express.Response) {
         const response: any = await new BlockchainService().transfer(req);
+        return res.status(response.status).send(response);
+    });
+
+    app.get('/v1/token/total-supply', async function (req: express.Request, res: express.Response) {
+        const response: any = await new BlockchainService().getTotalSupply(req);
         return res.status(response.status).send(response);
     });
 

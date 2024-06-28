@@ -1,4 +1,5 @@
 export const config = {
+    "chains":["polygonAmoy", "sepolia"],
     "polygonAmoy" : {
         "ERC20_ABI": [
             {
@@ -523,6 +524,8 @@ export const config = {
               "type": "function"
             }
           ],
+        "ERC721_ABI": [],
+        "ERC721_FACTORY_CONTRACT_ADDRESS":"",
         "JSON_RPC_PROVIDER":"https://polygon-amoy.g.alchemy.com/v2/1i-JadBalM7Dp1PnYL76aG1vREB_yfGp",
         "EXPLORER_BASE_URL":"https://amoy.polygonscan.com"
     },
@@ -1050,6 +1053,8 @@ export const config = {
               "type": "function"
             }
           ],
+        "ERC721_ABI": [],
+        "ERC721_FACTORY_CONTRACT_ADDRESS":"",
         "JSON_RPC_PROVIDER":"https://eth-sepolia.g.alchemy.com/v2/1i-JadBalM7Dp1PnYL76aG1vREB_yfGp",
         "EXPLORER_BASE_URL":"https://sepolia.etherscan.io"
     }

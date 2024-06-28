@@ -7,7 +7,7 @@ import { Network, Alchemy } from "alchemy-sdk";
 import { ethers, run } from "hardhat";
 import axios from "axios";
 
-import {ERC20_POLYGON_TESTNET_ABI, ERC721_POLYGON_TESTNET_ABI, ERC721_FACTORY_POLYGON_AMOY_CONTRACT_ADDRESS, ERC721_FACTORY_ABI} from "../../config/config";
+import { ERC721_POLYGON_TESTNET_ABI, ERC721_FACTORY_POLYGON_AMOY_CONTRACT_ADDRESS, ERC721_FACTORY_ABI} from "../../config/config";
 import { config } from "../../config/config-chain"
 import { NotificationService } from "./notification.service";
 import path from "path";
@@ -84,6 +84,7 @@ export class BlockchainService {
             if(!req.body.mintable) throw new InvalidInputError("mintable is required");
             if(!req.body.network) throw new InvalidInputError("network is required");   
             const { name, symbol, initialSupply, decimals, network, tokenStandard } = req.body;
+            if(!config.chains.includes(network)) throw new InvalidInputError(`${network} network is not supported yet`);
             const configuration = config[network];
 
             console.log(`-------------Deployment of ${tokenStandard} contract started on ${network}--------------- `);
@@ -244,6 +245,7 @@ export class BlockchainService {
             if(!req.body.to) throw new InvalidInputError("to address is required");
             if(!req.body.amount) throw new InvalidInputError("amount is required");
             if(!req.body.contractAddress) throw new InvalidInputError("contractAddress is required");
+            if(!req.body.network) throw new InvalidInputError("network is required");   
 
             const connection = new MongoUtils();
             connection.connect();
@@ -251,9 +253,10 @@ export class BlockchainService {
             const to = req.body.to;
             const amount = ethers.parseUnits(req.body.amount, 18);
             const contractAddress = req.body.contractAddress;
-            const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, new ethers.JsonRpcProvider(process.env.JSON_RPC_PROVIDER_AMOY));
-            
-            const contract : any = await this.initializeContract(process.env.JSON_RPC_PROVIDER_AMOY, contractAddress, ERC20_POLYGON_TESTNET_ABI);
+            const network = req.body.network;
+            const configuration = config[network];
+            const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, new ethers.JsonRpcProvider(configuration.JSON_RPC_PROVIDER));
+            const contract : any = await this.initializeContract(configuration.JSON_RPC_PROVIDER, contractAddress, configuration.ERC20_ABI);
             const tx = await contract.transfer(to, amount);
             await tx.wait();
             console.log('Transaction hash:', tx.hash);
@@ -264,11 +267,31 @@ export class BlockchainService {
             tokenTransfer.$to = to;
             tokenTransfer.$txHash = tx.hash;
             tokenTransfer.$amount = amount.toString();
-            tokenTransfer.$network = process.env.NETWORK;
+            tokenTransfer.$network = network;
 
             await connection.insert("erc20_transactions", tokenTransfer);
-            return new CustomResponse(200, "Transfer successfull", null, {hash : tx.hash});
+            return new CustomResponse(200, "Transfer successfull", null, {hash : tx.hash, checkOnExplorer: `${configuration.EXPLORER_BASE_URL}/tx/${tx.hash}`});
     
+        } catch (error) {
+            return CommonUtils.prepareErrorMessage(error);
+        }
+    }
+
+    public async getTotalSupply(req : any) : Promise<CustomResponse> {
+        try {
+            if(!req.body.contractAddress) throw new InvalidInputError("contractAddress is required");
+            if(!req.body.network) throw new InvalidInputError("network is required");   
+    
+            const connection = new MongoUtils();
+            connection.connect();
+            const network = req.body.network;
+            const contractAddress = req.body.contractAddress;
+            const configuration = config[network];
+            const contract : any = await this.initializeContract(configuration.JSON_RPC_PROVIDER, contractAddress, configuration.ERC20_ABI);
+            const totalSupply = await contract.totalSupply();
+            console.log('totalSupply is ', totalSupply.toString(), ' wei');
+    
+            return new CustomResponse(200, "Transfer successfull", null, {totalSupply : totalSupply.toString()});
         } catch (error) {
             return CommonUtils.prepareErrorMessage(error);
         }
@@ -278,7 +301,7 @@ export class BlockchainService {
         try {
             const connection = new MongoUtils();
             connection.connect();
-            const data = await connection.filter("loyyal_token_transfers",{}, null);
+            const data = await connection.filter("erc20_transactions",{}, null);
 
             let tokenTransfer = data.map((x) => ( new LoyyalTokenTransfer(x))) 
             return new CustomResponse(200, "List of transfer transactions of Loyyal token", null, tokenTransfer);
