@@ -1,4 +1,4 @@
-export const config = {
+export const configChain = {
     "chains":["polygonAmoy", "sepolia"],
     "polygonAmoy" : {
         "ERC20_ABI": [

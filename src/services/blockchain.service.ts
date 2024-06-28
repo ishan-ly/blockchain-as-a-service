@@ -4,11 +4,12 @@ import { LoyyalTokenTransfer } from "../models/loyyal-token-transfer.model";
 import { CommonUtils } from "../utils/common.utils";
 import { MongoUtils } from "../utils/mongo.utils";
 import { Network, Alchemy } from "alchemy-sdk";
-import { ethers, run } from "hardhat";
+import { ethers, run , network, config} from "hardhat";
+import hre from "hardhat"
 import axios from "axios";
 
 import { ERC721_POLYGON_TESTNET_ABI, ERC721_FACTORY_POLYGON_AMOY_CONTRACT_ADDRESS, ERC721_FACTORY_ABI} from "../../config/config";
-import { config } from "../../config/config-chain"
+import { configChain } from "../../config/config-chain"
 import { NotificationService } from "./notification.service";
 import path from "path";
 import fs from "fs"
@@ -84,8 +85,8 @@ export class BlockchainService {
             if(!req.body.mintable) throw new InvalidInputError("mintable is required");
             if(!req.body.network) throw new InvalidInputError("network is required");   
             const { name, symbol, initialSupply, decimals, network, tokenStandard } = req.body;
-            if(!config.chains.includes(network)) throw new InvalidInputError(`${network} network is not supported yet`);
-            const configuration = config[network];
+            if(!configChain.chains.includes(network)) throw new InvalidInputError(`${network} network is not supported yet`);
+            const configuration = configChain[network];
 
             console.log(`-------------Deployment of ${tokenStandard} contract started on ${network}--------------- `);
             const factoryContract : any = await this.initializeContract(configuration.JSON_RPC_PROVIDER, configuration.ERC20_FACTORY_CONTRACT_ADDRESS, configuration.ERC20_FACTORY_ABI);
@@ -108,7 +109,7 @@ export class BlockchainService {
                 console.log("Transaction hash: ", tx.hash);
 
                 try {
-                    await this.verifyContract(tokenAddress, name, symbol, initialSupply, decimals, wallet.address, network);
+                    await this.verifyContract(tokenAddress, [name, symbol, initialSupply, decimals, wallet.address], network);
 
                 } catch (error) {
                     console.error("Verification failed:", error);
@@ -125,10 +126,11 @@ export class BlockchainService {
         }
     }
 
-    public async verifyContract(tokenAddress, name, symbol, initialSupply, decimals, initialOwner, network) {
+    public async verifyContract(tokenAddress, constructorArguments, networks) {
         try {
-            console.log(`-------------Contract verification started on ${network}---------------`);
-            await run("verify:verify", { address: tokenAddress, constructorArguments: [name, symbol, initialSupply, decimals, initialOwner]}, {network});
+            console.log(`-------------Contract verification started on ${networks}---------------`);
+            network.name=networks
+            await run("verify:verify", { address: tokenAddress, constructorArguments});
             console.log("Contract verified successfully");
             return;
         } catch (error) {
@@ -136,6 +138,22 @@ export class BlockchainService {
             throw new Error("Contract verification failed");
         }
     }
+
+    // public async setNetwork (networkName) {
+    //     const networkConfig = config.networks?.[networkName];
+    // if (!networkConfig) {
+    //   throw new Error(`Network configuration for '${networkName}' not found`);
+    // }
+
+    // network.config = networkConfig;
+    // network.name = networkName;
+
+    // // Reset provider to apply the new network configuration
+    // ethers.provider = new ethers.JsonRpcProvider(networkConfig.url, {
+    //   name: networkName,
+    //   chainId: networkConfig.chainId,
+    // });
+    //   };
 
     public async verifyContract1(req : any) {
         try {
@@ -189,9 +207,12 @@ export class BlockchainService {
             if(!req.body.name) throw new InvalidInputError("name is required");
             if(!req.body.symbol) throw new InvalidInputError("symbol is required");
             if(!req.body.network) throw new InvalidInputError("network is required");   
+            if(!req.body.tokenStandard) throw new InvalidInputError("tokenStandard is required");
 
-            const { name, symbol, network } = req.body;
-            const configuration = config[network];
+
+            const { name, symbol, network, tokenStandard } = req.body;
+            const configuration = configChain[network];
+            console.log(`-------------Deployment of ${tokenStandard} contract started on ${network}--------------- `);
 
             const factoryContract : any = await this.initializeContract(configuration.JSON_RPC_PROVIDER, configuration.ERC721_FACTORY_CONTRACT_ADDRESS, configuration.ERC721_FACTORY_ABI);
             const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, new ethers.JsonRpcProvider(configuration.JSON_RPC_PROVIDER));
@@ -213,7 +234,7 @@ export class BlockchainService {
                 console.log("Transaction hash: ", tx.hash);
 
                 try {
-                    //await this.verifyContract(tokenAddress, name, symbol, network);
+                    await this.verifyContract(tokenAddress, [name, symbol, wallet.address], network);
 
                 } catch (error) {
                     console.error("Verification failed:", error);
@@ -269,7 +290,7 @@ export class BlockchainService {
             const amount = ethers.parseUnits(req.body.amount, 18);
             const contractAddress = req.body.contractAddress;
             const network = req.body.network;
-            const configuration = config[network];
+            const configuration = configChain[network];
             const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, new ethers.JsonRpcProvider(configuration.JSON_RPC_PROVIDER));
             const contract : any = await this.initializeContract(configuration.JSON_RPC_PROVIDER, contractAddress, configuration.ERC20_ABI);
             const tx = await contract.transfer(to, amount);
@@ -301,7 +322,7 @@ export class BlockchainService {
             connection.connect();
             const network = req.body.network;
             const contractAddress = req.body.contractAddress;
-            const configuration = config[network];
+            const configuration = configChain[network];
             const contract : any = await this.initializeContract(configuration.JSON_RPC_PROVIDER, contractAddress, configuration.ERC20_ABI);
             const totalSupply = await contract.totalSupply();
             console.log('totalSupply is ', totalSupply.toString(), ' wei');
