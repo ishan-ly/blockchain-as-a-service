@@ -33,6 +33,25 @@ etherscan : {
         sepolia : process.env.ETHERSCAN_API_KEY,
         polygonAmoy : process.env.POLYGONSCAN_API_KEY
     },
+    customChains: [
+        {
+          network: "polygonAmoy",
+          chainId: 80002,
+          urls: {
+            apiURL: "https://api-testnet.polygonscan.com/api",
+            browserURL: "https://amoy.polygonscan.com"
+          }
+        },
+        {
+          network: "sepolia",
+          chainId: 11155111,
+          urls: {
+            apiURL: "https://api-sepolia.etherscan.io/api",
+            browserURL: "https://sepolia.etherscan.io"
+          }
+        }
+      ]
+  
 },
 sourcify: {
     enabled: true

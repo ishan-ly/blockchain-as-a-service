@@ -8,7 +8,7 @@ import { ethers, run , network, config} from "hardhat";
 import hre from "hardhat"
 import axios from "axios";
 
-import { ERC721_POLYGON_TESTNET_ABI, ERC721_FACTORY_POLYGON_AMOY_CONTRACT_ADDRESS, ERC721_FACTORY_ABI} from "../../config/config";
+import { ERC721_POLYGON_TESTNET_ABI} from "../../config/config";
 import { configChain } from "../../config/config-chain"
 import { NotificationService } from "./notification.service";
 import path from "path";
@@ -345,4 +345,66 @@ export class BlockchainService {
             return CommonUtils.prepareErrorMessage(error);
         }
     }
+
+    // Function to check if a function name exists in the ABI
+    private async isFunctionInABI (abi: any[], functionName: string)  {
+        return abi.some(item => item.type == 'function' && item.name == functionName);
+    };
+
+    public async readContract(req : any) {
+        try {
+            if(!req.body.method) throw new InvalidInputError("method is required");
+            if(!req.body.contractAddress) throw new InvalidInputError("contractAddress is required");
+            if(!req.body.network) throw new InvalidInputError("network is required");   
+
+            const {method, contractAddress, network} = req.body;
+            const configuration = configChain[network];
+            if(!await this.isFunctionInABI(configuration.ERC20_ABI, method)) throw new InvalidInputError(`${method} is not available for ERC20 token standard`);
+            const contract : any = await this.initializeContract(configuration.JSON_RPC_PROVIDER, contractAddress, configuration.ERC20_ABI);
+            
+            switch(method) {
+                case 'totalSupply' : {
+                    const totalSupply = await contract.totalSupply();
+                    console.log('totalSupply is ', totalSupply.toString(), ' wei');
+                    return new CustomResponse(200, "Total supply fetched successfully", null, {totalSupply : totalSupply.toString()});
+                }
+                default: 
+                    console.log("default casse");
+                    break;
+            }
+        } catch (error) {
+            return CommonUtils.prepareErrorMessage(error);
+        }
+    }
+
+    public async writeContract(req: any) {
+        try {
+            if(!req.body.method) throw new InvalidInputError("method is required");
+            if(!req.body.contractAddress) throw new InvalidInputError("contractAddress is required");
+            if(!req.body.to) throw new InvalidInputError("to address is required");
+            if(!req.body.amount) throw new InvalidInputError("amount is required");
+            if(!req.body.network) throw new InvalidInputError("network is required");   
+
+            const {method, contractAddress, network} = req.body;
+            const configuration = configChain[network];
+            if(! await this.isFunctionInABI(configuration.ERC20_ABI, method)) throw new InvalidInputError(`${method} is not available for ERC20 token standard`)
+            const contract : any = await this.initializeContract(configuration.JSON_RPC_PROVIDER, contractAddress, configuration.ERC20_ABI);
+            
+            switch(method) {
+                case 'transfer' : {
+                    const {to, amount} = req.body;
+                    const tx = await contract.transfer(to, amount);
+                    await tx.wait();
+                    console.log('Transaction hash:', tx.hash);
+                    return new CustomResponse(200, "Transfer successfull", null, {txHash : tx.hash});
+                }
+            }
+            
+        } catch (error) {
+            return CommonUtils.prepareErrorMessage(error);
+        }
+
+    }
+
+
 }
