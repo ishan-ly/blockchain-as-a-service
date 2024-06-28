@@ -186,9 +186,15 @@ export class BlockchainService {
         const connection = new MongoUtils();
         connection.connect();
         try {
-            const { name, symbol } = req.body;
-            const factoryContract : any = await this.initializeContract(process.env.JSON_RPC_PROVIDER_AMOY,ERC721_FACTORY_POLYGON_AMOY_CONTRACT_ADDRESS, ERC721_FACTORY_ABI);
-            const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, new ethers.JsonRpcProvider(process.env.JSON_RPC_PROVIDER_AMOY));
+            if(!req.body.name) throw new InvalidInputError("name is required");
+            if(!req.body.symbol) throw new InvalidInputError("symbol is required");
+            if(!req.body.network) throw new InvalidInputError("network is required");   
+
+            const { name, symbol, network } = req.body;
+            const configuration = config[network];
+
+            const factoryContract : any = await this.initializeContract(configuration.JSON_RPC_PROVIDER, configuration.ERC721_FACTORY_CONTRACT_ADDRESS, configuration.ERC721_FACTORY_ABI);
+            const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, new ethers.JsonRpcProvider(configuration.JSON_RPC_PROVIDER));
 
             const tx = await factoryContract.createERC721(name, symbol);
             const receipt = await tx.wait();
@@ -203,13 +209,22 @@ export class BlockchainService {
                 // Decode the log data
                 const decodedLog = factoryContract.interface.decodeEventLog("ERC721Created", eventLog.data, eventLog.topics);
                 tokenAddress = decodedLog.tokenAddress;
-                console.log("Token address:", tokenAddress);
+                console.log("Token contract address:", tokenAddress);
+                console.log("Transaction hash: ", tx.hash);
+
+                try {
+                    //await this.verifyContract(tokenAddress, name, symbol, network);
+
+                } catch (error) {
+                    console.error("Verification failed:", error);
+                }
+
             } else {
                 console.error("ContractDeployed event not found in the transaction receipt");
             }
-            await connection.insert("erc721_deployed_contracts", {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`https://www.oklink.com/amoy/address/${tokenAddress}`});
+            await connection.insert("erc721_deployed_contracts", {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`${configuration.EXPLORER_BASE_URL}/token/${tokenAddress}`, network});
 
-            return new CustomResponse(200, "Contract ERC721 deployed successfully ", null, {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`https://www.oklink.com/amoy/address/${tokenAddress}`});
+            return new CustomResponse(200, "Contract ERC721 deployed successfully ", null, {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`${configuration.EXPLORER_BASE_URL}/token/${tokenAddress}`, network});
 
         } catch (error) {
             return CommonUtils.prepareErrorMessage(error);

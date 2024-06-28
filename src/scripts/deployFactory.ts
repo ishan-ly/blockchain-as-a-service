@@ -1,7 +1,7 @@
 import { ethers } from "hardhat";
 
 async function main() {
-  const ERC20Factory = await ethers.getContractFactory("ERC20Factory");
+  const ERC20Factory = await ethers.getContractFactory("ERC721Factory");
   const erc20Factory = await ERC20Factory.deploy();
   await erc20Factory.waitForDeployment();
 
