@@ -12,16 +12,6 @@ export default function blockchainServiceController(app: express.Application) {
         return res.status(response.status).send(response);
     });
 
-    app.post('/v1/token/transfer', async function (req: express.Request, res: express.Response) {
-        const response: any = await new BlockchainService().transfer(req);
-        return res.status(response.status).send(response);
-    });
-
-    app.get('/v1/token/total-supply', async function (req: express.Request, res: express.Response) {
-        const response: any = await new BlockchainService().getTotalSupply(req);
-        return res.status(response.status).send(response);
-    });
-
     app.get('/v1/token/transactions', async function (req: express.Request, res: express.Response) {
         const response: any = await new BlockchainService().getAllTransferTransactions();
         return res.status(response.status).send(response);
@@ -37,23 +27,28 @@ export default function blockchainServiceController(app: express.Application) {
         return res.status(response.status).send(response);
     });
 
-    app.post('/v1/token/mint-erc721', async function (req: express.Request, res: express.Response) {
-        const response: any = await new BlockchainService().mintERC721Nft(req);
-        return res.status(response.status).send(response);
-    });
-
     app.get('/v1/token/verify', async function (req: express.Request, res: express.Response) {
         const response: any = await new BlockchainService().verifyContract1(req);
         return res.status(response.status).send(response);
     });
 
-    app.post('/v1/token/read-contract', async function (req: express.Request, res: express.Response) {
-        const response: any = await new BlockchainService().readContract(req);
+    app.post('/v1/token/erc20/read-contract', async function (req: express.Request, res: express.Response) {
+        const response: any = await new BlockchainService().readContractERC20(req);
         return res.status(response.status).send(response);
     });
 
-    app.post('/v1/token/write-contract', async function (req: express.Request, res: express.Response) {
-        const response: any = await new BlockchainService().writeContract(req);
+    app.post('/v1/token/erc20/write-contract', async function (req: express.Request, res: express.Response) {
+        const response: any = await new BlockchainService().writeContractERC20(req);
+        return res.status(response.status).send(response);
+    });
+
+    app.post('/v1/token/erc721/read-contract', async function (req: express.Request, res: express.Response) {
+        const response: any = await new BlockchainService().readContractERC721(req);
+        return res.status(response.status).send(response);
+    });
+
+    app.post('/v1/token/erc721/write-contract', async function (req: express.Request, res: express.Response) {
+        const response: any = await new BlockchainService().writeContractERC721(req);
         return res.status(response.status).send(response);
     });
 
