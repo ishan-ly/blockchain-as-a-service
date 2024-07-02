@@ -3,6 +3,8 @@ import bodyParser from 'body-parser';
 const dotenv = require('dotenv');
 import cors from 'cors';
 import * as http from 'http';
+import swaggerUi from 'swagger-ui-express';
+import swaggerDocs  from './swagger/swagger';
 
 import controllers from './src/controllers';
 const cron = require("node-cron");
@@ -23,6 +25,8 @@ cron.schedule("0 0 1 * *", async () => {
 });
 
 controllers(app);
+app.use('/', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+
 const server = http.createServer(app);
 server.listen(process.env.PORT, () => {
     console.log(`blockchain-service api is running on port ${process.env.PORT}`);

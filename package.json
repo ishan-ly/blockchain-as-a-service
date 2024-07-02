@@ -43,6 +43,8 @@
     "nodemailer": "^6.9.13",
     "path": "^0.12.7",
     "solc": "^0.8.23-fixed",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
