@@ -18,12 +18,7 @@ export default function blockchainServiceController(app: express.Application) {
     });
 
     app.post('/v1/token/deploy-contract', async function (req: express.Request, res: express.Response) {
-        const response: any = await new BlockchainService().deployERC20Contract(req);
-        return res.status(response.status).send(response);
-    });
-
-    app.post('/v1/token/deploy-contract-erc721', async function (req: express.Request, res: express.Response) {
-        const response: any = await new BlockchainService().deployERC721Contract(req);
+        const response: any = await new BlockchainService().deployContract(req);
         return res.status(response.status).send(response);
     });
 

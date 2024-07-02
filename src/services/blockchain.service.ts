@@ -72,55 +72,99 @@ export class BlockchainService {
         }       
     }
 
-    public async deployERC20Contract(req : any) : Promise<CustomResponse> {
+    public async deployContract(req : any) : Promise<CustomResponse> {
         const connection = new MongoUtils();
         connection.connect();
 
         try {
-            if(!req.body.name) throw new InvalidInputError("name is required");
-            if(!req.body.symbol) throw new InvalidInputError("symbol is required");
-            if(!req.body.initialSupply) throw new InvalidInputError("initialSuppply is required");
-            if(!req.body.decimals) throw new InvalidInputError("decimals is required");
+            
             if(!req.body.tokenStandard) throw new InvalidInputError("tokenStandard is required");
-            if(!req.body.mintable) throw new InvalidInputError("mintable is required");
             if(!req.body.network) throw new InvalidInputError("network is required");   
-            const { name, symbol, initialSupply, decimals, network, tokenStandard } = req.body;
+            const {network, tokenStandard } = req.body;
             if(!configChain.chains.includes(network)) throw new InvalidInputError(`${network} network is not supported yet`);
             const configuration = configChain[network];
 
             console.log(`-------------Deployment of ${tokenStandard} contract started on ${network}--------------- `);
-            const factoryContract : any = await this.initializeContract(configuration.JSON_RPC_PROVIDER, configuration.ERC20_FACTORY_CONTRACT_ADDRESS, configuration.ERC20_FACTORY_ABI);
-            const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, new ethers.JsonRpcProvider(configuration.JSON_RPC_PROVIDER));
+            
+            switch(tokenStandard) {
+                case 'ERC20' : {
+                    if(!req.body.arguments.initialSupply) throw new InvalidInputError("initialSuppply is required");
+                    if(!req.body.arguments.decimals) throw new InvalidInputError("decimals is required");
+                    if(!req.body.arguments.mintable) throw new InvalidInputError("mintable is required");
+                    if(!req.body.arguments.name) throw new InvalidInputError("name is required");
+                    if(!req.body.arguments.symbol) throw new InvalidInputError("symbol is required");
+                    const {initialSupply, decimals, mintable, name, symbol} = req.body.arguments;
 
-            const tx = await factoryContract.createTokenERC20(name, symbol, initialSupply, decimals);
-            const receipt = await tx.wait();
+                    const factoryContract : any = await this.initializeContract(configuration.JSON_RPC_PROVIDER, configuration.ERC20_FACTORY_CONTRACT_ADDRESS, configuration.ERC20_FACTORY_ABI);
+                    const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, new ethers.JsonRpcProvider(configuration.JSON_RPC_PROVIDER));
 
-            // Assume ContractDeployed is the event emitted and it has a tokenAddress field
-            const eventSignature = ethers.id("ContractDeployed(address)");
+                    const tx = await factoryContract.createTokenERC20(name, symbol, initialSupply, decimals);
+                    const receipt = await tx.wait();
 
-            // Find the log that matches the ContractDeployed event
-            const eventLog = receipt.logs.find(log => log.topics[0] === eventSignature);
-            let tokenAddress;
-            if (eventLog) {
-                // Decode the log data
-                const decodedLog = factoryContract.interface.decodeEventLog("ContractDeployed", eventLog.data, eventLog.topics);
-                tokenAddress = decodedLog.tokenAddress;
-                console.log("Token contract address:", tokenAddress);
-                console.log("Transaction hash: ", tx.hash);
+                    // Assume ContractDeployed is the event emitted and it has a tokenAddress field
+                    const eventSignature = ethers.id("ContractDeployed(address)");
 
-                try {
-                    await this.verifyContract(tokenAddress, [name, symbol, initialSupply, decimals, wallet.address], network);
+                    // Find the log that matches the ContractDeployed event
+                    const eventLog = receipt.logs.find(log => log.topics[0] === eventSignature);
+                    let tokenAddress;
+                    if (eventLog) {
+                        // Decode the log data
+                        const decodedLog = factoryContract.interface.decodeEventLog("ContractDeployed", eventLog.data, eventLog.topics);
+                        tokenAddress = decodedLog.tokenAddress;
+                        console.log("Token contract address:", tokenAddress);
+                        console.log("Transaction hash: ", tx.hash);
 
-                } catch (error) {
-                    console.error("Verification failed:", error);
+                        try {
+                            await this.verifyContract(tokenAddress, [name, symbol, initialSupply, decimals, wallet.address], network);
+
+                        } catch (error) {
+                            console.error("Verification failed:", error);
+                        }
+                    } else {
+                        console.error("ContractDeployed event not found in the transaction receipt");
+                    }
+                    //store in db
+                    await connection.insert("erc20_deployed_contracts", {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`${configuration.EXPLORER_BASE_URL}/token/${tokenAddress}`, network});
+                    return new CustomResponse(200, "Contract deployed successfully ", null, {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`${configuration.EXPLORER_BASE_URL}/token/${tokenAddress}`, network});
+
                 }
-            } else {
-                console.error("ContractDeployed event not found in the transaction receipt");
-            }
-            //store in db
-            await connection.insert("erc20_deployed_contracts", {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`${configuration.EXPLORER_BASE_URL}/token/${tokenAddress}`, network});
-            return new CustomResponse(200, "Contract deployed successfully ", null, {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`${configuration.EXPLORER_BASE_URL}/token/${tokenAddress}`, network});
+                case 'ERC721' : {
+                    if(!req.body.arguments.name) throw new InvalidInputError("name is required");
+                    if(!req.body.arguments.symbol) throw new InvalidInputError("symbol is required");
+                    const {name, symbol} = req.body.arguments;
 
+                    const factoryContract : any = await this.initializeContract(configuration.JSON_RPC_PROVIDER, configuration.ERC721_FACTORY_CONTRACT_ADDRESS, configuration.ERC721_FACTORY_ABI);
+                    const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, new ethers.JsonRpcProvider(configuration.JSON_RPC_PROVIDER));
+
+                    const tx = await factoryContract.createERC721(name, symbol);
+                    const receipt = await tx.wait();
+
+                    // Assume ContractDeployed is the event emitted and it has a tokenAddress field
+                    const eventSignature = ethers.id("ERC721Created(address)");
+
+                    // Find the log that matches the ERC721Created event
+                    const eventLog = receipt.logs.find(log => log.topics[0] === eventSignature);
+                    let tokenAddress;
+                    if (eventLog) {
+                        // Decode the log data
+                        const decodedLog = factoryContract.interface.decodeEventLog("ERC721Created", eventLog.data, eventLog.topics);
+                        tokenAddress = decodedLog.tokenAddress;
+                        console.log("Token contract address:", tokenAddress);
+                        console.log("Transaction hash: ", tx.hash);
+
+                        try {
+                            await this.verifyContract(tokenAddress, [name, symbol, wallet.address], network);
+
+                        } catch (error) {
+                            console.error("Verification failed:", error);
+                        }
+                    } else {
+                        console.error("ContractDeployed event not found in the transaction receipt");
+                    }
+                    await connection.insert("erc721_deployed_contracts", {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`${configuration.EXPLORER_BASE_URL}/token/${tokenAddress}`, network});
+                    return new CustomResponse(200, "Contract ERC721 deployed successfully ", null, {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`${configuration.EXPLORER_BASE_URL}/token/${tokenAddress}`, network});
+                }
+            }
         } catch (error) {
             return CommonUtils.prepareErrorMessage(error);
         }
@@ -195,58 +239,6 @@ export class BlockchainService {
             if (response.data.status === '1') {
                 return new CustomResponse(200, "Contract verification submitted successfully", null, response.data.result);
             } 
-        } catch (error) {
-            return CommonUtils.prepareErrorMessage(error);
-        }
-    }
-    
-    public async deployERC721Contract(req : any) {
-        const connection = new MongoUtils();
-        connection.connect();
-        try {
-            if(!req.body.name) throw new InvalidInputError("name is required");
-            if(!req.body.symbol) throw new InvalidInputError("symbol is required");
-            if(!req.body.network) throw new InvalidInputError("network is required");   
-            if(!req.body.tokenStandard) throw new InvalidInputError("tokenStandard is required");
-
-
-            const { name, symbol, network, tokenStandard } = req.body;
-            const configuration = configChain[network];
-            console.log(`-------------Deployment of ${tokenStandard} contract started on ${network}--------------- `);
-
-            const factoryContract : any = await this.initializeContract(configuration.JSON_RPC_PROVIDER, configuration.ERC721_FACTORY_CONTRACT_ADDRESS, configuration.ERC721_FACTORY_ABI);
-            const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, new ethers.JsonRpcProvider(configuration.JSON_RPC_PROVIDER));
-
-            const tx = await factoryContract.createERC721(name, symbol);
-            const receipt = await tx.wait();
-
-            // Assume ContractDeployed is the event emitted and it has a tokenAddress field
-            const eventSignature = ethers.id("ERC721Created(address)");
-
-            // Find the log that matches the ERC721Created event
-            const eventLog = receipt.logs.find(log => log.topics[0] === eventSignature);
-            let tokenAddress;
-            if (eventLog) {
-                // Decode the log data
-                const decodedLog = factoryContract.interface.decodeEventLog("ERC721Created", eventLog.data, eventLog.topics);
-                tokenAddress = decodedLog.tokenAddress;
-                console.log("Token contract address:", tokenAddress);
-                console.log("Transaction hash: ", tx.hash);
-
-                try {
-                    await this.verifyContract(tokenAddress, [name, symbol, wallet.address], network);
-
-                } catch (error) {
-                    console.error("Verification failed:", error);
-                }
-
-            } else {
-                console.error("ContractDeployed event not found in the transaction receipt");
-            }
-            await connection.insert("erc721_deployed_contracts", {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`${configuration.EXPLORER_BASE_URL}/token/${tokenAddress}`, network});
-
-            return new CustomResponse(200, "Contract ERC721 deployed successfully ", null, {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`${configuration.EXPLORER_BASE_URL}/token/${tokenAddress}`, network});
-
         } catch (error) {
             return CommonUtils.prepareErrorMessage(error);
         }
