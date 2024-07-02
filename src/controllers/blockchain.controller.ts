@@ -617,7 +617,4 @@ export default function blockchainServiceController(app: express.Application) {
         const response: any = await new BlockchainService().writeContractERC721(req);
         return res.status(response.status).send(response);
     });
-
-
-
 }

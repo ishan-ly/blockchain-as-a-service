@@ -3,12 +3,9 @@ import { CustomResponse } from "../models/custom-response.model";
 import { LoyyalTokenTransfer } from "../models/loyyal-token-transfer.model";
 import { CommonUtils } from "../utils/common.utils";
 import { MongoUtils } from "../utils/mongo.utils";
-import { Network, Alchemy } from "alchemy-sdk";
 import { ethers, run , network, config} from "hardhat";
-import hre from "hardhat"
 import axios from "axios";
 
-import { ERC721_POLYGON_TESTNET_ABI} from "../../config/config";
 import { configChain } from "../../config/config-chain"
 import { NotificationService } from "./notification.service";
 import path from "path";

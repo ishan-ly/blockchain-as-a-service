@@ -10,7 +10,7 @@ const swaggerOptions = {
       },
       servers: [
         {
-          url: `${process.env.APP_BASE_URL}`
+          url: process.env.APP_BASE_URL
         }
       ],
       tags: [
