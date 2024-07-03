@@ -26,6 +26,10 @@ const swaggerOptions = {
           name: 'ERC721',
           description: 'APIs related to operations on ERC721 deployed contracts'
         },
+        {
+           name: 'ERC1155',
+           description: 'APIs related to operations on ERC1155 deployed contracts'
+        },
       ]
     },
     apis: ['./src/controllers/**/*.ts']

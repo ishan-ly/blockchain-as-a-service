@@ -246,7 +246,7 @@ export default function blockchainServiceController(app: express.Application) {
      *                   message: "Balance fetched successfully"
      *                   error: null
      *                   body:
-     *                     result: "1234567890"
+     *                     balance: "1000000000000000000000000"
      *               name:
      *                 summary: Example response for name method
      *                 value:
@@ -254,7 +254,7 @@ export default function blockchainServiceController(app: express.Application) {
      *                   message: "Name fetched successfully"
      *                   error: null
      *                   body:
-     *                     result: "Loyyal Token"
+     *                     name: "Loyyal Token"
      *               symbol:
      *                 summary: Example response for symbol method
      *                 value:
@@ -262,7 +262,7 @@ export default function blockchainServiceController(app: express.Application) {
      *                   message: "Symbol fetched successfully"
      *                   error: null
      *                   body:
-     *                     result: "LOY"
+     *                     symbol: "LOY"
      *               owner:
      *                 summary: Example response for owner method
      *                 value:
@@ -270,7 +270,7 @@ export default function blockchainServiceController(app: express.Application) {
      *                   message: "Owner fetched successfully"
      *                   error: null
      *                   body:
-     *                     result: "0xe8F910b8eD19BC258b20A0c86e292394EfE38318"
+     *                     owner: "0xe8F910b8eD19BC258b20A0c86e292394EfE38318"
      *               totalSupply:
      *                 summary: Example response for totalSupply method
      *                 value:
@@ -278,7 +278,7 @@ export default function blockchainServiceController(app: express.Application) {
      *                   message: "Total supply fetched successfully"
      *                   error: null
      *                   body:
-     *                     result: "1000000000000000000000000"
+     *                     totalSupply: "1000000000000000000000000"
      */
     app.post('/v1/token/erc20/read-contract', async function (req: express.Request, res: express.Response) {
         const response: any = await new BlockchainService().readContractERC20(req);
@@ -513,7 +513,7 @@ export default function blockchainServiceController(app: express.Application) {
      *     tags:
      *       - ERC721
      *     summary: Write to an ERC721 token contract
-     *     description: Perform write operations (e.g., safeMint, safeTransferFrom) on an ERC721 token contract.
+     *     description: Perform write operations (e.g., safeMint, safeTransferFrom, transferOwnership) on an ERC721 token contract.
      *     requestBody:
      *       required: true
      *       content:
@@ -526,7 +526,7 @@ export default function blockchainServiceController(app: express.Application) {
      *                 enum: [ERC721]
      *               method:
      *                 type: string
-     *                 enum: [safeMint, safeTransferFrom]
+     *                 enum: [safeMint, safeTransferFrom, transferOwnership]
      *               network:
      *                 type: string
      *                 example: polygonAmoy
@@ -548,6 +548,9 @@ export default function blockchainServiceController(app: express.Application) {
      *                   from:
      *                     type: string
      *                     example: 0xe8F910b8eD19BC258b20A0c86e292394EfE38318
+     *                   newOwner:
+     *                     type: string
+     *                     example: 0x308524c70C885521872F3D5C981a8fC650e256FE
      *           examples:
      *             safeMint:
      *               summary: Example for safeMint operation on ERC721 contract
@@ -571,6 +574,15 @@ export default function blockchainServiceController(app: express.Application) {
      *                   to: 0x308524c70C885521872F3D5C981a8fC650e256FE
      *                   tokenId: 2
      *                   from: 0xe8F910b8eD19BC258b20A0c86e292394EfE38318
+     *             transferOwnership:
+     *               summary: Example for transferOwnership operation on ERC721 contract
+     *               value:
+     *                 tokenStandard: ERC721
+     *                 method: transferOwnership
+     *                 network: polygonAmoy
+     *                 contractAddress: 0x82E1578dC4568e69C55340Ea3240e864dd9E0EB5
+     *                 arguments:
+     *                   newOwner: 0x308524c70C885521872F3D5C981a8fC650e256FE
      *     responses:
      *       200:
      *         description: Operation successful
@@ -584,7 +596,7 @@ export default function blockchainServiceController(app: express.Application) {
      *                   example: 200
      *                 message:
      *                   type: string
-     *                   example: Minting successfull
+     *                   example: Minting successful
      *                 error:
      *                   type: string
      *                   nullable: true
@@ -612,6 +624,14 @@ export default function blockchainServiceController(app: express.Application) {
      *                   error: null
      *                   body:
      *                     hash: 0xdaad0768de242920bd4b3a967f0049ec8386e2c13b02e22395cc9c6bc4add3c7
+     *               transferOwnership:
+     *                 summary: Example response for transferOwnership operation
+     *                 value:
+     *                   status: 200
+     *                   message: Ownership transferred successfully
+     *                   error: null
+     *                   body:
+     *                     hash: 0x7cd9aa2adccc647ced04b4dba1a2b9f375eb5b07038ae955ddd0352a34ba6171
      */
     app.post('/v1/token/erc721/write-contract', async function (req: express.Request, res: express.Response) {
         const response: any = await new BlockchainService().writeContractERC721(req);
