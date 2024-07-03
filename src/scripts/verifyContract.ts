@@ -2,16 +2,16 @@ import { run } from "hardhat";
 
 async function main() {
     try {
-        const tokenAddress="0x81D0de4FB37d5B2b5A9719db2F87e8e915C9acE9";
-        const name="T20 World Cup Final";
-        const symbol="IND";
+        const tokenAddress="0xeA820005997f706466A735357551Dd6E797A135E";
+        const name="Loyyal Token1015";
+        const symbol="LOY1015";
         const initialSupply=1000000;
         const decimals=18;
         const initialOwner="0xe8F910b8eD19BC258b20A0c86e292394EfE38318";
 
         await run("verify:verify", {
             address: tokenAddress,
-            constructorArguments: [name, symbol, initialOwner],
+            constructorArguments: [initialOwner, name, symbol],
         });
         console.log("Contract verified successfully");
     } catch (error) {

@@ -434,7 +434,6 @@ export const configChain = {
               "type": "function"
             }
           ],
-        "ERC20_FACTORY_CONTRACT_ADDRESS":"0x7065400d841ccaa45be3f8df4ce68e457da45f1d",
         "ERC20_FACTORY_ABI": [
             {
               "anonymous": false,
@@ -1913,7 +1912,7 @@ export const configChain = {
             "type": "function"
           }
         ],
-
+        "ERC20_FACTORY_CONTRACT_ADDRESS":"0x7065400d841ccaa45be3f8df4ce68e457da45f1d",
         "ERC721_FACTORY_CONTRACT_ADDRESS":"0xE9195e6759041a81442d47E8C362c6c5b08aa248",
         "ERC1155_FACTORY_CONTRACT_ADDRESS":"0x684d02ef108F121Ad2c21fa71b27226A6Ac38d45",
         "JSON_RPC_PROVIDER":"https://polygon-amoy.g.alchemy.com/v2/1i-JadBalM7Dp1PnYL76aG1vREB_yfGp",
@@ -2353,7 +2352,6 @@ export const configChain = {
               "type": "function"
             }
           ],
-        "ERC20_FACTORY_CONTRACT_ADDRESS":"0xdCDe076d60EBE3fb924dFE6A10f470ac9A802482",
         "ERC20_FACTORY_ABI": [
             {
               "anonymous": false,
@@ -3832,7 +3830,8 @@ export const configChain = {
             "type": "function"
           }
         ],
-
+        
+        "ERC20_FACTORY_CONTRACT_ADDRESS":"0xdCDe076d60EBE3fb924dFE6A10f470ac9A802482",
         "ERC721_FACTORY_CONTRACT_ADDRESS":"0xcAD1aCEb7ed0BAF6122969dA52A2A6B2A895AD30",
         "ERC1155_FACTORY_CONTRACT_ADDRESS":"0x78975775BAff258edebC87024C1EED2037D7D252",
         "JSON_RPC_PROVIDER":"https://eth-sepolia.g.alchemy.com/v2/1i-JadBalM7Dp1PnYL76aG1vREB_yfGp",

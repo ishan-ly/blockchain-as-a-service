@@ -4,11 +4,10 @@ import { LoyyalTokenTransfer } from "../models/loyyal-token-transfer.model";
 import { CommonUtils } from "../utils/common.utils";
 import { MongoUtils } from "../utils/mongo.utils";
 import { ethers, run , network, config} from "hardhat";
-import axios from "axios";
-
 import { configChain } from "../../config/config-chain"
 import { NotificationService } from "./notification.service";
 import path from "path";
+import axios from "axios";
 import fs from "fs"
 export class BlockchainService {
 
@@ -160,6 +159,42 @@ export class BlockchainService {
                     }
                     await connection.insert("erc721_deployed_contracts", {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`${configuration.EXPLORER_BASE_URL}/token/${tokenAddress}`, network});
                     return new CustomResponse(200, "Contract ERC721 deployed successfully ", null, {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`${configuration.EXPLORER_BASE_URL}/token/${tokenAddress}`, network});
+                }
+                case 'ERC1155' : {
+                    if(!req.body.arguments.name) throw new InvalidInputError("name is required");
+                    if(!req.body.arguments.symbol) throw new InvalidInputError("symbol is required");
+                    const {name, symbol} = req.body.arguments;
+
+                    const factoryContract : any = await this.initializeContract(configuration.JSON_RPC_PROVIDER, configuration.ERC1155_FACTORY_CONTRACT_ADDRESS, configuration.ERC1155_FACTORY_ABI);
+                    const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, new ethers.JsonRpcProvider(configuration.JSON_RPC_PROVIDER));
+
+                    const tx = await factoryContract.createERC1155(name, symbol);
+                    const receipt = await tx.wait();
+
+                    // Assume ContractDeployed is the event emitted and it has a tokenAddress field
+                    const eventSignature = ethers.id("ERC1155Created(address)");
+
+                    // Find the log that matches the ERC721Created event
+                    const eventLog = receipt.logs.find(log => log.topics[0] === eventSignature);
+                    let tokenAddress;
+                    if (eventLog) {
+                        // Decode the log data
+                        const decodedLog = factoryContract.interface.decodeEventLog("ERC1155Created", eventLog.data, eventLog.topics);
+                        tokenAddress = decodedLog.tokenAddress;
+                        console.log("Token contract address:", tokenAddress);
+                        console.log("Transaction hash: ", tx.hash);
+
+                        try {
+                            await this.verifyContract(tokenAddress, [wallet.address, name, symbol], network);
+
+                        } catch (error) {
+                            console.error("Verification failed:", error);
+                        }
+                    } else {
+                        console.error("ContractDeployed event not found in the transaction receipt");
+                    }
+                    await connection.insert("erc1155_deployed_contracts", {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`${configuration.EXPLORER_BASE_URL}/token/${tokenAddress}`, network});
+                    return new CustomResponse(200, "Contract ERC1155 deployed successfully ", null, {tokenAddress, txHash : tx.hash, creatorAddress : wallet.address , explorerUrl :`${configuration.EXPLORER_BASE_URL}/token/${tokenAddress}`, network});
                 }
             }
         } catch (error) {
