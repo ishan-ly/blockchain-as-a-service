@@ -19,7 +19,7 @@ export default function blockchainServiceController(app: express.Application) {
      *     tags:
      *       - Deploy
      *     summary: Deploy a token contract
-     *     description: Deploy an ERC20 or ERC721 token contract on the specified network. Currently we support polygonAmoy and sepolia networks.
+     *     description: Deploy an ERC20, ERC721 and ERC1155 token contract on the specified network. Currently we support polygonAmoy and sepolia networks.
      *     requestBody:
      *       required: true
      *       content:
@@ -29,7 +29,7 @@ export default function blockchainServiceController(app: express.Application) {
      *             properties:
      *               tokenStandard:
      *                 type: string
-     *                 enum: [ERC20, ERC721]
+     *                 enum: [ERC20, ERC721, ERC1155]
      *               network:
      *                 type: string
      *                 example: polygonAmoy
@@ -52,8 +52,8 @@ export default function blockchainServiceController(app: express.Application) {
      *                     type: boolean
      *                     example: true
      *           examples:
-     *             erc20:
-     *               summary: Example for deploying an ERC20 token
+     *             ERC20:
+     *               summary: Example for deploying an ERC20 contract
      *               value:
      *                 tokenStandard: ERC20
      *                 network: polygonAmoy
@@ -63,14 +63,22 @@ export default function blockchainServiceController(app: express.Application) {
      *                   initialSupply: 1000000
      *                   decimals: 18
      *                   mintable: true
-     *             erc721:
-     *               summary: Example for deploying an ERC721 token
+     *             ERC721:
+     *               summary: Example for deploying an ERC721 contract
      *               value:
      *                 tokenStandard: ERC721
      *                 network: polygonAmoy
      *                 arguments:
      *                   name: Loyyal Token0708
      *                   symbol: LOY08
+     *             ERC1155:
+     *               summary: Example for deploying an ERC1155 contract
+     *               value:
+     *                 tokenStandard: ERC1155
+     *                 network: sepolia
+     *                 arguments:
+     *                   name: Loyyal Token1016
+     *                   symbol: LOY1016
      *     responses:
      *       200:
      *         description: Contract deployed successfully
@@ -108,8 +116,8 @@ export default function blockchainServiceController(app: express.Application) {
      *                       type: string
      *                       example: polygonAmoy
      *             examples:
-     *               erc20:
-     *                 summary: Example response for deploying an ERC20 token
+     *               ERC20:
+     *                 summary: Example response for deploying an ERC20 contract
      *                 value:
      *                   status: 200
      *                   message: Contract deployed successfully
@@ -120,8 +128,8 @@ export default function blockchainServiceController(app: express.Application) {
      *                     creatorAddress: "0xe8F910b8eD19BC258b20A0c86e292394EfE38318"
      *                     explorerUrl: "https://amoy.polygonscan.com/token/0x7dA54B7AaaC132586DEe7cA6be2Fdb8c1de01921"
      *                     network: "polygonAmoy"
-     *               erc721:
-     *                 summary: Example response for deploying an ERC721 token
+     *               ERC721:
+     *                 summary: Example response for deploying an ERC721 contract
      *                 value:
      *                   status: 200
      *                   message: Contract ERC721 deployed successfully
@@ -132,6 +140,18 @@ export default function blockchainServiceController(app: express.Application) {
      *                     creatorAddress: "0xe8F910b8eD19BC258b20A0c86e292394EfE38318"
      *                     explorerUrl: "https://amoy.polygonscan.com/token/0x3d13225F3ed4b0F220e5831fb88528c6d78204Bd"
      *                     network: "polygonAmoy"
+     *               ERC1155:
+     *                 summary: Example response for deploying an ERC1155 contract
+     *                 value:
+     *                   status: 200
+     *                   message: Contract ERC1155 deployed successfully
+     *                   error: null
+     *                   body:
+     *                     tokenAddress: "0x6eE634B23DD7366ff25D6f2f5a15767a3d6cB028"
+     *                     txHash: "0xd186462722ca34bb573207b67f49139b7a81f4ed80e2f9069f075aedc1e17d99"
+     *                     creatorAddress: "0xe8F910b8eD19BC258b20A0c86e292394EfE38318"
+     *                     explorerUrl: "https://sepolia.etherscan.io/token/0x6eE634B23DD7366ff25D6f2f5a15767a3d6cB028"
+     *                     network: "sepolia"
      */
     app.post('/v1/token/deploy-contract', async function (req: express.Request, res: express.Response) {
         const response: any = await new BlockchainService().deployContract(req);
