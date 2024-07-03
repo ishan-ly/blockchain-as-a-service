@@ -2,9 +2,9 @@ import { run } from "hardhat";
 
 async function main() {
     try {
-        const tokenAddress="0xeA820005997f706466A735357551Dd6E797A135E";
-        const name="Loyyal Token1015";
-        const symbol="LOY1015";
+        const tokenAddress="0x098e6b28C1948054807ba740f691b8de503b2B33";
+        const name="Loyyal Token1017";
+        const symbol="LOY1017";
         const initialSupply=1000000;
         const decimals=18;
         const initialOwner="0xe8F910b8eD19BC258b20A0c86e292394EfE38318";

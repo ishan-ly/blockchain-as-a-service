@@ -7,8 +7,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract ERC1155Token is ERC1155, Ownable {
     uint256 public tokenCounter;
-    string public _name;
-    string public _symbol;
+    string private _name;
+    string private _symbol;
 
     mapping(uint256 => string) private _tokenURIs;
 

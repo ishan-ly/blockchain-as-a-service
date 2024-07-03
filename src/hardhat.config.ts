@@ -38,7 +38,7 @@ etherscan : {
           network: "polygonAmoy",
           chainId: 80002,
           urls: {
-            apiURL: "https://api-testnet.polygonscan.com/api",
+            apiURL: "https://api-amoy.polygonscan.com/api",
             browserURL: "https://amoy.polygonscan.com"
           }
         },

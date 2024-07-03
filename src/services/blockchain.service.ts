@@ -488,4 +488,37 @@ export class BlockchainService {
             return CommonUtils.prepareErrorMessage(error);
         }
     }
+
+    public async readContractERC1155(req : any) {
+        try {
+            if(!req.body.method) throw new InvalidInputError("method is required");
+            if(!req.body.contractAddress) throw new InvalidInputError("contractAddress is required");
+            if(!req.body.network) throw new InvalidInputError("network is required");   
+
+            const {method, contractAddress, network} = req.body;
+            const configuration = configChain[network];
+            if(!await this.isFunctionInABI(configuration.ERC721_ABI, method)) throw new InvalidInputError(`This method is not available for ERC721 token standard`);
+            const contract : any = await this.initializeContract(configuration.JSON_RPC_PROVIDER, contractAddress, configuration.ERC721_ABI);
+            
+            switch(method) {
+                case 'name' : {
+                    const name = await contract.name();
+                    console.log('name is ', name.toString());
+                    return new CustomResponse(200, "Name of NFT fetched successfully", null, {name : name.toString()});
+                }
+                case 'tokenURI' : {
+                    if(!req.body.arguments.tokenId) throw new InvalidInputError("tokenId is required");
+                    const {tokenId} = req.body.arguments;
+                    const tokenUri = await contract.tokenURI(tokenId);
+                    console.log('tokenUri is ', tokenUri.toString());
+                    return new CustomResponse(200, "tokenUri of NFT fetched successfully", null, {tokenUri});
+                }
+                default: 
+                    console.log("default casse");
+                    return new CustomResponse(400, "This functionality is not supported yet", null, null);
+            }
+        } catch (error) {
+            return CommonUtils.prepareErrorMessage(error);
+        }
+    }
 }

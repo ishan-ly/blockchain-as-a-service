@@ -344,8 +344,8 @@
       ]
     },
     "/home/loyyal/Documents/D/repos/nft-marketplace-backend/src/contracts/ERC1155Token.sol": {
-      "lastModificationDate": 1719316370884,
-      "contentHash": "3bf4bacd3041bbcb1406e060c18849ac",
+      "lastModificationDate": 1720003566698,
+      "contentHash": "e2bf7a5b25d101b3833454a01fd03ff5",
       "sourceName": "src/contracts/ERC1155Token.sol",
       "solcConfig": {
         "version": "0.8.20",
