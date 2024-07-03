@@ -497,8 +497,8 @@ export class BlockchainService {
 
             const {method, contractAddress, network} = req.body;
             const configuration = configChain[network];
-            if(!await this.isFunctionInABI(configuration.ERC721_ABI, method)) throw new InvalidInputError(`This method is not available for ERC721 token standard`);
-            const contract : any = await this.initializeContract(configuration.JSON_RPC_PROVIDER, contractAddress, configuration.ERC721_ABI);
+            if(!await this.isFunctionInABI(configuration.ERC1155_ABI, method)) throw new InvalidInputError(`This method is not available for ERC1155 token standard`);
+            const contract : any = await this.initializeContract(configuration.JSON_RPC_PROVIDER, contractAddress, configuration.ERC1155_ABI);
             
             switch(method) {
                 case 'name' : {
@@ -506,15 +506,119 @@ export class BlockchainService {
                     console.log('name is ', name.toString());
                     return new CustomResponse(200, "Name of NFT fetched successfully", null, {name : name.toString()});
                 }
-                case 'tokenURI' : {
+                case 'uri' : {
                     if(!req.body.arguments.tokenId) throw new InvalidInputError("tokenId is required");
                     const {tokenId} = req.body.arguments;
-                    const tokenUri = await contract.tokenURI(tokenId);
-                    console.log('tokenUri is ', tokenUri.toString());
-                    return new CustomResponse(200, "tokenUri of NFT fetched successfully", null, {tokenUri});
+                    const uri = await contract.uri(tokenId);
+                    console.log('uri is ', uri.toString());
+                    return new CustomResponse(200, "tokenUri of NFT fetched successfully", null, {uri});
+                }
+                case 'balanceOf' : {
+                    if(!req.body.arguments.account) throw new InvalidInputError("account is required");
+                    if(!req.body.arguments.id) throw new InvalidInputError("id is required");
+                    const {account, id} = req.body.arguments;
+                    const balance = await contract.balanceOf(account, id);
+                    console.log('balance is ', balance.toString());
+                    return new CustomResponse(200, "tokenUri of NFT fetched successfully", null, {balance});
                 }
                 default: 
                     console.log("default casse");
+                    return new CustomResponse(400, "This functionality is not supported yet", null, null);
+            }
+        } catch (error) {
+            return CommonUtils.prepareErrorMessage(error);
+        }
+    }
+
+    public async writeContractERC1155(req: any) {
+        const connection = new MongoUtils();
+        connection.connect();
+        try {
+            if(!req.body.method) throw new InvalidInputError("method is required");
+            if(!req.body.contractAddress) throw new InvalidInputError("contractAddress is required");
+            if(!req.body.network) throw new InvalidInputError("network is required");   
+
+            const {method, contractAddress, network} = req.body;
+            const configuration = configChain[network];
+            const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, new ethers.JsonRpcProvider(configuration.JSON_RPC_PROVIDER));
+
+            if(! await this.isFunctionInABI(configuration.ERC1155_ABI, method)) throw new InvalidInputError(`This method is not available for ERC1155 token standard`)
+            const contract : any = await this.initializeContract(configuration.JSON_RPC_PROVIDER, contractAddress, configuration.ERC1155_ABI);
+            
+            switch(method) {
+                case 'mint' : {
+                    if(!req.body.arguments.account) throw new InvalidInputError("account is required");
+                    if(!req.body.arguments.amount) throw new InvalidInputError("amount is required");
+                    if(!req.body.arguments.tokenURI) throw new InvalidInputError("tokenURI address is required");
+                    if(!req.body.arguments.data) throw new InvalidInputError("data address is required");
+
+                    const {account, amount, tokenURI, data} = req.body.arguments;
+                    const tx = await contract.safeMint(account, amount, tokenURI, data);
+                    await tx.wait();
+                    console.log('Transaction hash:', tx.hash);
+                    await connection.insert("erc1155_transactions", {method, from  : wallet.address, account, tokenURI, amount, contractAddress, hash : tx.hash, network});
+                    return new CustomResponse(200, "Minting successfull", null, {txHash : tx.hash});
+                }
+
+                case 'safeTransferFrom' : {
+                    if(!req.body.arguments.from) throw new InvalidInputError("from is required");
+                    if(!req.body.arguments.id) throw new InvalidInputError("id is required");
+                    if(!req.body.arguments.to) throw new InvalidInputError("to address is required");
+                    if(!req.body.arguments.value) throw new InvalidInputError("value address is required");
+                    if(!req.body.arguments.data) throw new InvalidInputError("data address is required");
+
+                    const {from, to, id, value, data} = req.body.arguments;
+
+                    const tx = await contract.safeTransferFrom(from, to, id, value, data);
+                    await tx.wait();
+                    console.log('Transaction hash:', tx.hash);
+                    await connection.insert("erc1155_transactions", {method, from  : wallet.address, to, tokenId: id, amount : value, contractAddress, hash : tx.hash, network});
+                    return new CustomResponse(200, "Transfer successfull", null, {txHash : tx.hash});
+
+                }
+
+                case 'transferOwnership' : {
+                    if(!req.body.arguments.newOwner) throw new InvalidInputError("newOwner is required");
+                    const {newOwner} = req.body.arguments;
+                    const tx = await contract.transferOwnership(newOwner);
+                    await tx.wait();
+                    console.log('Transaction hash:', tx.hash);
+                    await connection.insert("erc1155_transactions", {method, from  : wallet.address, newOwner, contractAddress, hash : tx.hash, network});
+                    return new CustomResponse(200, "Ownership Transfered successfully", null, {hash : tx.hash});
+
+                }
+
+                case 'mintBatch' : {
+                    if(!req.body.arguments.ids) throw new InvalidInputError("ids is required");
+                    if(!req.body.arguments.amounts) throw new InvalidInputError("amounts is required");
+                    if(!req.body.arguments.to) throw new InvalidInputError("to address is required");
+                    if(!req.body.arguments.data) throw new InvalidInputError("data address is required");
+                    const {to, ids, amounts, data} = req.body.arguments;
+
+                    const tx = await contract.mintBatch(to, ids, amounts, data);
+                    await tx.wait();
+                    console.log('Transaction hash:', tx.hash);
+                    await connection.insert("erc1155_transactions", {method, from  : wallet.address, to, tokenIds: ids, amounts, contractAddress, hash : tx.hash, network});
+                    return new CustomResponse(200, "Batch Minting done successfully", null, {hash : tx.hash});   
+                }
+
+                case 'safeBatchTransferFrom' : {
+                    if(!req.body.arguments.ids) throw new InvalidInputError("ids is required");
+                    if(!req.body.arguments.values) throw new InvalidInputError("values is required");
+                    if(!req.body.arguments.to) throw new InvalidInputError("to address is required");
+                    if(!req.body.arguments.from) throw new InvalidInputError("from address is required");
+                    if(!req.body.arguments.data) throw new InvalidInputError("data address is required");
+
+                    const {from, to, ids, values, data} = req.body.arguments;
+                    const tx = await contract.safeBatchTransferFrom(from, to, ids, values, data);
+                    await tx.wait();
+                    console.log('Transaction hash:', tx.hash);
+                    await connection.insert("erc1155_transactions", {method, from  : wallet.address, to, tokenIds: ids, amounts: values, contractAddress, hash : tx.hash, network});
+                    return new CustomResponse(200, "Batch Minting done successfully", null, {hash : tx.hash});   
+                }
+
+                default : 
+                    console.log('default case');
                     return new CustomResponse(400, "This functionality is not supported yet", null, null);
             }
         } catch (error) {

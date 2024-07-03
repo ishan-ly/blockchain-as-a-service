@@ -657,4 +657,14 @@ export default function blockchainServiceController(app: express.Application) {
         const response: any = await new BlockchainService().writeContractERC721(req);
         return res.status(response.status).send(response);
     });
+
+    app.post('/v1/token/erc1155/read-contract', async function (req: express.Request, res: express.Response) {
+        const response: any = await new BlockchainService().readContractERC1155(req);
+        return res.status(response.status).send(response);
+    });
+
+    app.post('/v1/token/erc1155/write-contract', async function (req: express.Request, res: express.Response) {
+        const response: any = await new BlockchainService().writeContractERC1155(req);
+        return res.status(response.status).send(response);
+    });
 }
