@@ -419,7 +419,7 @@ export class BlockchainService {
                     return new CustomResponse(200, "tokenUri of NFT fetched successfully", null, {tokenUri});
                 }
                 default: 
-                    console.log("default casse");
+                    console.log("default case");
                     return new CustomResponse(400, "This functionality is not supported yet", null, null);
             }
         } catch (error) {
@@ -519,10 +519,10 @@ export class BlockchainService {
                     const {account, id} = req.body.arguments;
                     const balance = await contract.balanceOf(account, id);
                     console.log('balance is ', balance.toString());
-                    return new CustomResponse(200, "tokenUri of NFT fetched successfully", null, {balance});
+                    return new CustomResponse(200, "balance of NFT fetched successfully", null, {balance: parseInt(balance)});
                 }
                 default: 
-                    console.log("default casse");
+                    console.log("default case");
                     return new CustomResponse(400, "This functionality is not supported yet", null, null);
             }
         } catch (error) {
@@ -553,7 +553,7 @@ export class BlockchainService {
                     if(!req.body.arguments.data) throw new InvalidInputError("data address is required");
 
                     const {account, amount, tokenURI, data} = req.body.arguments;
-                    const tx = await contract.safeMint(account, amount, tokenURI, data);
+                    const tx = await contract.mint(account, amount, tokenURI, data);
                     await tx.wait();
                     console.log('Transaction hash:', tx.hash);
                     await connection.insert("erc1155_transactions", {method, from  : wallet.address, account, tokenURI, amount, contractAddress, hash : tx.hash, network});
@@ -614,7 +614,7 @@ export class BlockchainService {
                     await tx.wait();
                     console.log('Transaction hash:', tx.hash);
                     await connection.insert("erc1155_transactions", {method, from  : wallet.address, to, tokenIds: ids, amounts: values, contractAddress, hash : tx.hash, network});
-                    return new CustomResponse(200, "Batch Minting done successfully", null, {hash : tx.hash});   
+                    return new CustomResponse(200, "Batch Transfer done successfully", null, {hash : tx.hash});   
                 }
 
                 default : 
