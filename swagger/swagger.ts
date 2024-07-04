@@ -1,5 +1,6 @@
 import swaggerJsDoc from 'swagger-jsdoc';
-
+import dotenv from 'dotenv';
+dotenv.config({path : '.env'});
 const swaggerOptions = {
     swaggerDefinition: {
       openapi: '3.0.0',
@@ -10,7 +11,7 @@ const swaggerOptions = {
       },
       servers: [
         {
-          url: process.env.APP_BASE_URL
+          url: `${process.env.APP_BASE_URL}`
         }
       ],
       tags: [

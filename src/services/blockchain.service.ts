@@ -294,7 +294,7 @@ export class BlockchainService {
         return abi.some(item => item.type == 'function' && item.name == functionName);
     };
 
-    public async readContractERC20(req : any) {
+    public async readContractERC20(req : any) : Promise<CustomResponse> {
         try {
             if(!req.body.method) throw new InvalidInputError("method is required");
             if(!req.body.contractAddress) throw new InvalidInputError("contractAddress is required");
@@ -342,7 +342,7 @@ export class BlockchainService {
         }
     }
 
-    public async writeContractERC20(req: any) {
+    public async writeContractERC20(req: any) : Promise<CustomResponse> {
         const connection = new MongoUtils();
         connection.connect();
         try {
@@ -394,7 +394,7 @@ export class BlockchainService {
 
     }
 
-    public async readContractERC721(req : any) {
+    public async readContractERC721(req : any) : Promise<CustomResponse> {
         try {
             if(!req.body.method) throw new InvalidInputError("method is required");
             if(!req.body.contractAddress) throw new InvalidInputError("contractAddress is required");
@@ -427,7 +427,7 @@ export class BlockchainService {
         }
     }
 
-    public async writeContractERC721(req: any) {
+    public async writeContractERC721(req: any) : Promise<CustomResponse> {
         const connection = new MongoUtils();
         connection.connect();
         try {
@@ -489,7 +489,7 @@ export class BlockchainService {
         }
     }
 
-    public async readContractERC1155(req : any) {
+    public async readContractERC1155(req : any) : Promise<CustomResponse> {
         try {
             if(!req.body.method) throw new InvalidInputError("method is required");
             if(!req.body.contractAddress) throw new InvalidInputError("contractAddress is required");
@@ -530,7 +530,7 @@ export class BlockchainService {
         }
     }
 
-    public async writeContractERC1155(req: any) {
+    public async writeContractERC1155(req: any) : Promise<CustomResponse> {
         const connection = new MongoUtils();
         connection.connect();
         try {

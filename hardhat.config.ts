@@ -5,7 +5,6 @@ require("@nomicfoundation/hardhat-toolbox");
 const dotenv = require("dotenv");
 dotenv.config();
 const config = {
-    // defaultNetwork : "polygonAmoy",
     solidity: "0.8.20",
     paths: {
         sources: "./src/contracts",
