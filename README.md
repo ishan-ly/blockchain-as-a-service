@@ -16,13 +16,13 @@ This repo contains source code for Blockchain as a service(BAAS).
 Clone the project
 
 ```bash
-  git clone https://github.com/loyyal/nft-marketplace-backend.git
+  git clone https://github.com/loyyal/blockchain-service-apis.git
 ```
 
 Go to the project directory
 
 ```bash
-  cd nft-marketplace-backend
+  cd blockchain-service-apis
 ```
 
 Install dependencies
